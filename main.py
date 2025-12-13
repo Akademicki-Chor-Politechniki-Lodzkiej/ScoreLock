@@ -83,3 +83,8 @@ def library():
     scores = Score.query.order_by(Score.uploaded_at.desc()).all()
     return render_template('library.html', scores=scores)
 
+@app.route('/scores/<int:score_id>')
+def view_score(score_id):
+    score = Score.query.get_or_404(score_id)
+    return send_from_directory(app.config['UPLOAD_FOLDER'], score.filename)
+
