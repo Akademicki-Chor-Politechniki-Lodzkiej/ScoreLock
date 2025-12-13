@@ -1,0 +1,143 @@
+:root {
+    --primary-color: #0d6efd;
+    --secondary-color: #6c757d;
+    --success-color: #198754;
+    --danger-color: #dc3545;
+    --dark-color: #212529;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+}
+
+/* Login Page Styles */
+.login-page {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+}
+
+.login-page .card {
+    border: none;
+    border-radius: 15px;
+}
+
+.login-page .nav-pills .nav-link {
+    border-radius: 10px;
+    font-weight: 500;
+}
+
+.login-page .nav-pills .nav-link.active {
+    background-color: var(--primary-color);
+}
+
+/* Card Hover Effects */
+.hover-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Score Icon */
+.score-icon {
+    opacity: 0.8;
+}
+
+/* Navbar Styles */
+.navbar-dark {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+    font-weight: 600;
+    font-size: 1.5rem;
+}
+
+/* Card Styles */
+.card {
+    border: none;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.card-header {
+    border-bottom: none;
+    font-weight: 600;
+}
+
+/* Form Styles */
+.form-control:focus,
+.btn:focus {
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Button Styles */
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: #0b5ed7;
+    transform: translateY(-2px);
+}
+
+.btn-success:hover {
+    background-color: #157347;
+    transform: translateY(-2px);
+}
+
+.btn-danger:hover {
+    background-color: #bb2d3b;
+}
+
+/* Table Styles */
+.table {
+    background-color: white;
+}
+
+.table thead th {
+    border-bottom: 2px solid var(--primary-color);
+    font-weight: 600;
+    color: var(--dark-color);
+}
+
+/* Alert Styles */
+.alert {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Code Styles */
+code {
+    background-color: #f8f9fa;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    font-size: 0.95rem;
+    color: var(--dark-color);
+    border: 1px solid #dee2e6;
+}
+
+/* List Group Styles */
+.list-group-item {
+    border: 1px solid rgba(0, 0, 0, 0.125);
+    margin-bottom: 0.5rem;
+    border-radius: 8px !important;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .display-4 {
+        font-size: 2rem;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+}
+
