@@ -28,3 +28,23 @@ def init_db():
         print("\n✓ Database initialization complete!")
         print("\nYou can now run the application with: python main.py")
 
+def create_admin():
+    """Create a new admin user"""
+    with app.app_context():
+        username = input("Enter admin username: ")
+
+        # Check if username exists
+        existing = Admin.query.filter_by(username=username).first()
+        if existing:
+            print(f"Error: User '{username}' already exists!")
+            sys.exit(1)
+
+        password = input("Enter admin password: ")
+
+        admin = Admin(username=username)
+        admin.set_password(password)
+        db.session.add(admin)
+        db.session.commit()
+
+        print(f"✓ Admin user '{username}' created successfully!")
+
