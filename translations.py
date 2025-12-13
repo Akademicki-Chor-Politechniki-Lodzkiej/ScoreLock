@@ -35,7 +35,8 @@ translations = {
         'actions_label': 'Actions',
         'confirm_delete': 'Are you sure?',
         'check_back_later' : 'Check back later for new content',
-        'library_subtitle' : 'Browse and access sheet music'
+        'library_subtitle' : 'Browse and access sheet music',
+        'footer_credit': 'Created with ❤️ by AChPŁ IT Department'
     },
     'pl': {
         'brand': 'ScoreLock',
@@ -70,9 +71,9 @@ translations = {
         'actions_label': 'Akcje',
         'confirm_delete': 'Czy na pewno?',
         'check_back_later' : 'Sprawdź ponownie później, aby zobaczyć nową zawartość',
-        'library_subtitle' : 'Przeglądaj i uzyskuj dostęp do nut'
+        'library_subtitle' : 'Przeglądaj i uzyskuj dostęp do nut',
+        'footer_credit': 'Stworzone z ❤️ przez dział IT AChPŁ'
     }
 }
 
 available_languages = list(translations.keys())
-
