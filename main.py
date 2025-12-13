@@ -223,13 +223,10 @@ def upload_score():
     # Prevent hidden filenames starting with a dot
     filename = filename.lstrip('.')
 
-    # Cap the filename length to avoid filesystem issues
-    if len(filename) > 200:
-        filename = filename[-200:]
-
-    # Add timestamp to prevent duplicates
+    # Split base and extension, then compute allowed base length so that
+    # timestamp + base + ext will not exceed 200 characters.
+    base, ext = os.path.splitext(filename)
     timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S_')
-    filename = timestamp + filename
     max_total_len = 200
     max_base_len = max_total_len - len(ext) - len(timestamp)
     if max_base_len < 0:
