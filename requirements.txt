@@ -7,3 +7,4 @@ Flask-SQLAlchemy==3.1.1
 Flask-Login==0.6.3
 Flask-WTF==1.1.1
 PyPDF2==3.0.1
+Flask-Limiter==2.9.0

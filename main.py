@@ -7,6 +7,8 @@ from models import db, Admin, OTP, Score
 from datetime import datetime
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from uuid import uuid4
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 # Load environment variables
 load_dotenv()
@@ -21,6 +23,9 @@ app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
 # Initialize extensions
 db.init_app(app)
 csrf = CSRFProtect(app)
+
+# Initialize rate limiter (in-memory backend). Limits are applied per remote IP.
+limiter = Limiter(key_func=get_remote_address, app=app, default_limits=[])
 
 # Expose a helper in templates that returns the raw CSRF token string
 def _csrf_token():
@@ -50,6 +55,7 @@ def index():
     return redirect(url_for('login'))
 
 @app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("10 per minute")
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('library'))
@@ -110,6 +116,7 @@ def admin_dashboard():
 
 @app.route('/admin/generate-otp', methods=['POST'])
 @login_required
+@limiter.limit("20 per hour")
 def generate_otp():
     code = OTP.generate_code()
     new_otp = OTP(code=code, created_by=current_user.id)
