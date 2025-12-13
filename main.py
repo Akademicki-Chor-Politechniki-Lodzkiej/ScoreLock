@@ -78,3 +78,8 @@ def logout():
     flash('You have been logged out.', 'info')
     return redirect(url_for('login'))
 
+@app.route('/library')
+def library():
+    scores = Score.query.order_by(Score.uploaded_at.desc()).all()
+    return render_template('library.html', scores=scores)
+
