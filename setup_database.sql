@@ -5,7 +5,8 @@
 CREATE DATABASE IF NOT EXISTS scorelock CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Create dedicated user (optional but recommended)
-CREATE USER IF NOT EXISTS 'scorelock_user'@'localhost' IDENTIFIED BY 'change_this_password';
+-- IMPORTANT: Replace 'YOUR_SECURE_PASSWORD_HERE' with a strong, unique password before running this script!
+CREATE USER IF NOT EXISTS 'scorelock_user'@'localhost' IDENTIFIED BY 'YOUR_SECURE_PASSWORD_HERE';
 GRANT ALL PRIVILEGES ON scorelock.* TO 'scorelock_user'@'localhost';
 FLUSH PRIVILEGES;
 
