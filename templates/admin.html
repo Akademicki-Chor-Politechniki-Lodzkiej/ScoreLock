@@ -76,7 +76,7 @@
                                 <code class="fs-6">{{ otp.code }}</code>
                                 <br>
                                 <small class="text-muted">
-                                    {{ t('uploaded_label') }}: {{ otp.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                    {{ t('created_label') }}: {{ otp.created_at.strftime('%Y-%m-%d %H:%M') }}
                                 </small>
                             </div>
                             <form method="POST" action="{{ url_for('deactivate_otp', otp_id=otp.id) }}"

@@ -31,9 +31,11 @@ translations = {
         'composer_label': 'Composer',
         'file_label': 'PDF File',
         'uploaded_label': 'Uploaded',
+        'created_label' : 'Created',
         'actions_label': 'Actions',
         'confirm_delete': 'Are you sure?',
-        'check_back_later' : 'Check back later for new content'
+        'check_back_later' : 'Check back later for new content',
+        'library_subtitle' : 'Browse and access sheet music'
     },
     'pl': {
         'brand': 'ScoreLock',
@@ -64,9 +66,11 @@ translations = {
         'composer_label': 'Kompozytor',
         'file_label': 'Plik PDF',
         'uploaded_label': 'Przesłano',
+        'created_label' : 'Utworzono',
         'actions_label': 'Akcje',
         'confirm_delete': 'Czy na pewno?',
-        'check_back_later' : 'Sprawdź ponownie później, aby zobaczyć nową zawartość'
+        'check_back_later' : 'Sprawdź ponownie później, aby zobaczyć nową zawartość',
+        'library_subtitle' : 'Przeglądaj i uzyskuj dostęp do nut'
     }
 }
 
