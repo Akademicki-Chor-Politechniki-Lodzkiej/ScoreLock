@@ -29,3 +29,10 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 def load_user(user_id):
     return Admin.query.get(int(user_id))
 
+# Routes
+@app.route('/')
+def index():
+    if current_user.is_authenticated:
+        return redirect(url_for('library'))
+    return redirect(url_for('login'))
+
