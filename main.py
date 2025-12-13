@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from models import db, Admin, OTP, Score
 from datetime import datetime
 from flask_wtf import CSRFProtect
+from uuid import uuid4
 
 # Load environment variables
 load_dotenv()
@@ -165,10 +166,39 @@ def upload_score():
 
     # Safe filename and save bytes to disk
     filename = secure_filename(file.filename)
+    # If secure_filename returned an empty name (e.g. filename only had disallowed chars), fall back
+    if not filename:
+        # Preserve PDF extension if original filename suggests it, otherwise no extension
+        ext = '.pdf' if file.filename.lower().endswith('.pdf') else ''
+        filename = f"{uuid4().hex}{ext}"
+
+    # Ensure filename contains no path separators (defense in depth)
+    filename = filename.replace(os.path.sep, '_').replace('/', '_')
+
+    # Prevent hidden filenames starting with a dot
+    filename = filename.lstrip('.')
+
+    # Cap the filename length to avoid filesystem issues
+    if len(filename) > 200:
+        filename = filename[-200:]
+
     # Add timestamp to prevent duplicates
     timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S_')
     filename = timestamp + filename
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+    # Ensure final filepath is inside the configured upload folder (defense in depth)
+    upload_folder_abs = os.path.abspath(app.config['UPLOAD_FOLDER'])
+    filepath_abs = os.path.abspath(filepath)
+    try:
+        if os.path.commonpath([upload_folder_abs, filepath_abs]) != upload_folder_abs:
+            app.logger.error('Detected attempted path traversal in upload: %s', filepath_abs)
+            flash('Invalid upload path.', 'danger')
+            return redirect(url_for('admin_dashboard'))
+    except Exception as e:
+        app.logger.exception('Error validating upload path: %s', e)
+        flash('Invalid upload path.', 'danger')
+        return redirect(url_for('admin_dashboard'))
 
     try:
         with open(filepath, 'wb') as f:
