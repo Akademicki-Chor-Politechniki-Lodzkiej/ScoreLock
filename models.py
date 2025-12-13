@@ -37,3 +37,15 @@ class OTP(db.Model):
         """Generate a secure random OTP code"""
         return secrets.token_urlsafe(12)
 
+class Score(db.Model):
+    __tablename__ = 'scores'
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    composer = db.Column(db.String(200))
+    filename = db.Column(db.String(255), nullable=False)
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    uploaded_by = db.Column(db.Integer, db.ForeignKey('admins.id'), nullable=False)
+
+    admin = db.relationship('Admin', backref='scores_uploaded')
+
