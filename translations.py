@@ -4,6 +4,7 @@
 translations = {
     'en': {
         'brand': 'ScoreLock',
+        'app_subtitle': 'Secure Sheet Music Library',
         'nav_library': 'Library',
         'nav_admin': 'Admin Panel',
         'nav_logout': 'Logout',
@@ -31,10 +32,12 @@ translations = {
         'file_label': 'PDF File',
         'uploaded_label': 'Uploaded',
         'actions_label': 'Actions',
-        'confirm_delete': 'Are you sure?'
+        'confirm_delete': 'Are you sure?',
+        'check_back_later' : 'Check back later for new content'
     },
     'pl': {
         'brand': 'ScoreLock',
+        'app_subtitle': 'Bezpieczna Biblioteka Nut',
         'nav_library': 'Biblioteka',
         'nav_admin': 'Panel Admina',
         'nav_logout': 'Wyloguj',
@@ -62,7 +65,8 @@ translations = {
         'file_label': 'Plik PDF',
         'uploaded_label': 'Przesłano',
         'actions_label': 'Akcje',
-        'confirm_delete': 'Czy na pewno?'
+        'confirm_delete': 'Czy na pewno?',
+        'check_back_later' : 'Sprawdź ponownie później, aby zobaczyć nową zawartość'
     }
 }
 
