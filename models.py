@@ -30,7 +30,7 @@ class OTP(db.Model):
     used_at = db.Column(db.DateTime, nullable=True)
     created_by = db.Column(db.Integer, db.ForeignKey('admins.id'), nullable=False)
 
-    admin = db.relationship('Admin', backref='otps_created')
+    admin = db.relationship('Admin', backref='created_otps')
 
     @staticmethod
     def generate_code():
@@ -47,5 +47,5 @@ class Score(db.Model):
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
     uploaded_by = db.Column(db.Integer, db.ForeignKey('admins.id'), nullable=False)
 
-    admin = db.relationship('Admin', backref='scores_uploaded')
+    admin = db.relationship('Admin', backref='uploaded_scores')
 
