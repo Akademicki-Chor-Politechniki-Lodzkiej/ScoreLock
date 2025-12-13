@@ -88,3 +88,10 @@ def view_score(score_id):
     score = Score.query.get_or_404(score_id)
     return send_from_directory(app.config['UPLOAD_FOLDER'], score.filename)
 
+@app.route('/admin')
+@login_required
+def admin_dashboard():
+    otps = OTP.query.filter_by(created_by=current_user.id).order_by(OTP.created_at.desc()).all()
+    scores = Score.query.order_by(Score.uploaded_at.desc()).all()
+    return render_template('admin.html', otps=otps, scores=scores)
+
