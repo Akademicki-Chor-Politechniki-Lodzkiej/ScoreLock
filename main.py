@@ -48,6 +48,13 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 def load_user(user_id):
     return Admin.query.get(int(user_id))
 
+def is_authorized():
+    """Return True if the request is authenticated via admin login or OTP session."""
+    try:
+        return current_user.is_authenticated or session.get('otp_authenticated')
+    except Exception:
+        return False
+
 # Routes
 @app.route('/')
 def index():
@@ -114,11 +121,17 @@ def logout():
 
 @app.route('/library')
 def library():
+    if not is_authorized():
+        flash('Please login to access the library.', 'warning')
+        return redirect(url_for('login'))
     scores = Score.query.order_by(Score.uploaded_at.desc()).all()
     return render_template('library.html', scores=scores)
 
 @app.route('/scores/<int:score_id>')
 def view_score(score_id):
+    if not is_authorized():
+        flash('Please login to access the score.', 'warning')
+        return redirect(url_for('login'))
     score = Score.query.get_or_404(score_id)
     return send_from_directory(app.config['UPLOAD_FOLDER'], score.filename)
 
