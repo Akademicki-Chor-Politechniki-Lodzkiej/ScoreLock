@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - ScoreLock{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-4">
+                <i class="bi bi-gear"></i> Admin Dashboard
+            </h1>
+            <p class="lead text-muted">Manage your score library and access codes</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Upload Score -->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-cloud-upload"></i> Upload New Score
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('upload_score') }}" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Title</label>
+                            <input type="text" class="form-control" id="title" name="title" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="composer" class="form-label">Composer</label>
+                            <input type="text" class="form-control" id="composer" name="composer">
+                        </div>
+                        <div class="mb-3">
+                            <label for="file" class="form-label">PDF File</label>
+                            <input type="file" class="form-control" id="file" name="file"
+                                   accept=".pdf" required>
+                            <div class="form-text">Maximum file size: 50MB</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-upload"></i> Upload Score
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Generate OTP -->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-key"></i> Generate OTP
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>Generate a one-time password to give access to the library.</p>
+                    <form method="POST" action="{{ url_for('generate_otp') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-plus-circle"></i> Generate New OTP
+                        </button>
+                    </form>
+
+                    <hr class="my-4">
+
+                    <h6 class="mb-3">Active OTPs</h6>
+                    {% if otps %}
+                    <div class="list-group">
+                        {% for otp in otps %}
+                        {% if otp.is_active %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <code class="fs-6">{{ otp.code }}</code>
+                                <br>
+                                <small class="text-muted">
+                                    Created: {{ otp.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                </small>
+                            </div>
+                            <form method="POST" action="{{ url_for('deactivate_otp', otp_id=otp.id) }}"
+                                  class="d-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-x-circle"></i> Deactivate
+                                </button>
+                            </form>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No OTPs generated yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scores List -->
+    <div class="row mt-4">
+        <div class="col">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-collection"></i> All Scores
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if scores %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Composer</th>
+                                    <th>Uploaded</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for score in scores %}
+                                <tr>
+                                    <td>{{ score.title }}</td>
+                                    <td>{{ score.composer or '-' }}</td>
+                                    <td>{{ score.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>
+                                        <a href="{{ url_for('view_score', score_id=score.id) }}"
+                                           class="btn btn-sm btn-primary" target="_blank">
+                                            <i class="bi bi-eye"></i> View
+                                        </a>
+                                        <form method="POST"
+                                              action="{{ url_for('delete_score', score_id=score.id) }}"
+                                              class="d-inline"
+                                              onsubmit="return confirm('Are you sure?');">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-sm btn-danger">
+                                                <i class="bi bi-trash"></i> Delete
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No scores uploaded yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,334 @@
+import os
+from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory, session
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from werkzeug.utils import secure_filename
+from dotenv import load_dotenv
+from models import db, Admin, OTP, Score
+from datetime import datetime, timedelta
+from flask_wtf.csrf import CSRFProtect, generate_csrf
+from uuid import uuid4
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
+# Load environment variables
+load_dotenv()
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-this')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'mysql+pymysql://root:@localhost/scorelock')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'scores')
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)  # OTP sessions last 1 hour by default
+
+# Initialize extensions
+db.init_app(app)
+csrf = CSRFProtect(app)
+
+# Initialize rate limiter (in-memory backend). Limits are applied per remote IP.
+limiter = Limiter(key_func=get_remote_address, app=app, default_limits=[])
+
+# Expose a helper in templates that returns the raw CSRF token string
+def _csrf_token():
+    try:
+        return generate_csrf()
+    except Exception:
+        return ''
+
+app.jinja_env.globals['csrf_token'] = _csrf_token
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+# Create upload folder if it doesn't exist
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+@login_manager.user_loader
+def load_user(user_id):
+    return Admin.query.get(int(user_id))
+
+def is_authorized():
+    """Return True if the request is authenticated via admin login or OTP session."""
+    try:
+        return current_user.is_authenticated or session.get('otp_authenticated')
+    except Exception:
+        return False
+
+# Routes
+@app.route('/')
+def index():
+    # Allow access if admin logged in or OTP session present
+    if current_user.is_authenticated or session.get('otp_authenticated'):
+        return redirect(url_for('library'))
+    return redirect(url_for('login'))
+
+@app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("10 per minute")
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('library'))
+
+    if request.method == 'POST':
+        login_type = request.form.get('login_type')
+
+        if login_type == 'otp':
+            otp_code = request.form.get('otp_code')
+            otp = OTP.query.filter_by(code=otp_code, is_active=True).first()
+
+            if otp:
+                # Mark OTP as used
+                otp.used_at = datetime.utcnow()
+                db.session.commit()
+
+                # Create a short-lived session flag for OTP-authenticated users
+                session.permanent = True
+                session['otp_authenticated'] = True
+                session['otp_id'] = otp.id
+
+                flash('Welcome! You have been authenticated with OTP for limited access.', 'success')
+                return redirect(url_for('library'))
+            else:
+                flash('Invalid or expired OTP code.', 'danger')
+
+        elif login_type == 'admin':
+            username = request.form.get('username')
+            password = request.form.get('password')
+            admin = Admin.query.filter_by(username=username).first()
+
+            if admin and admin.check_password(password):
+                login_user(admin)
+                # Avoid echoing username (user-controlled) into a flash message to prevent possible XSS
+                flash('Welcome back!', 'success')
+                return redirect(url_for('admin_dashboard'))
+            else:
+                flash('Invalid username or password.', 'danger')
+
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    # Clear OTP session flag if present
+    session.pop('otp_authenticated', None)
+    session.pop('otp_id', None)
+
+    # If admin is logged in, log them out
+    if current_user.is_authenticated:
+        logout_user()
+        flash('You have been logged out.', 'info')
+    else:
+        flash('Session cleared.', 'info')
+    return redirect(url_for('login'))
+
+@app.route('/library')
+def library():
+    if not is_authorized():
+        flash('Please login to access the library.', 'warning')
+        return redirect(url_for('login'))
+    scores = Score.query.order_by(Score.uploaded_at.desc()).all()
+    return render_template('library.html', scores=scores)
+
+@app.route('/scores/<int:score_id>')
+def view_score(score_id):
+    if not is_authorized():
+        flash('Please login to access the score.', 'warning')
+        return redirect(url_for('login'))
+    score = Score.query.get_or_404(score_id)
+    return send_from_directory(app.config['UPLOAD_FOLDER'], score.filename)
+
+@app.route('/admin')
+@login_required
+def admin_dashboard():
+    otps = OTP.query.filter_by(created_by=current_user.id).order_by(OTP.created_at.desc()).all()
+    scores = Score.query.order_by(Score.uploaded_at.desc()).all()
+    return render_template('admin.html', otps=otps, scores=scores)
+
+@app.route('/admin/generate-otp', methods=['POST'])
+@login_required
+@limiter.limit("20 per hour")
+def generate_otp():
+    code = OTP.generate_code()
+    new_otp = OTP(code=code, created_by=current_user.id)
+    db.session.add(new_otp)
+    db.session.commit()
+    flash(f'OTP generated: {code}', 'success')
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/deactivate-otp/<int:otp_id>', methods=['POST'])
+@login_required
+def deactivate_otp(otp_id):
+    otp = OTP.query.get_or_404(otp_id)
+    if otp.created_by == current_user.id:
+        otp.is_active = False
+        db.session.commit()
+        flash('OTP deactivated successfully.', 'success')
+    else:
+        flash('You can only deactivate your own OTPs.', 'danger')
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/upload', methods=['POST'])
+@login_required
+def upload_score():
+    if 'file' not in request.files:
+        flash('No file provided.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    file = request.files['file']
+    if file.filename == '':
+        flash('No file selected.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    # Quick filename extension check
+    if not file.filename.lower().endswith('.pdf'):
+        flash('Only PDF files are allowed.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    # Read file bytes (safe because MAX_CONTENT_LENGTH limits size)
+    from io import BytesIO
+    data = file.read()
+
+    # Basic PDF magic header check
+    if not data.startswith(b'%PDF'):
+        flash('Uploaded file is not a valid PDF (invalid header).', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    # Try to parse the PDF to ensure it's not a disguised binary
+    try:
+        try:
+            from PyPDF2 import PdfReader
+        except ModuleNotFoundError:
+            app.logger.exception('PyPDF2 library is not installed; cannot validate PDFs')
+            flash('Server misconfiguration: PDF validation library not available.', 'danger')
+            return redirect(url_for('admin_dashboard'))
+
+        reader = PdfReader(BytesIO(data))
+        # Ensure it has at least one page
+        if len(getattr(reader, 'pages', [])) == 0:
+            raise ValueError('PDF has no pages')
+    except Exception as e:
+        app.logger.exception('Uploaded file failed PDF validation: %s', e)
+        flash('Uploaded file is not a valid PDF.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    # Safe filename and save bytes to disk
+    filename = secure_filename(file.filename)
+    # If secure_filename returned an empty name (e.g. filename only had disallowed chars), fall back
+    if not filename:
+        # Preserve PDF extension if original filename suggests it, otherwise no extension
+        ext = '.pdf' if file.filename.lower().endswith('.pdf') else ''
+        filename = f"{uuid4().hex}{ext}"
+
+    # Ensure filename contains no path separators (defense in depth)
+    filename = filename.replace(os.path.sep, '_').replace('/', '_')
+
+    # Prevent hidden filenames starting with a dot
+    filename = filename.lstrip('.')
+
+    # Split base and extension, then compute allowed base length so that
+    # timestamp + base + ext will not exceed 200 characters.
+    base, ext = os.path.splitext(filename)
+    timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S_')
+    max_total_len = 200
+    max_base_len = max_total_len - len(ext) - len(timestamp)
+    if max_base_len < 0:
+        # If extension+timestamp alone exceed the limit, fall back to a UUID name
+        filename = f"{timestamp}{uuid4().hex}{ext}"
+    else:
+        if len(base) > max_base_len:
+            base = base[:max_base_len]
+        filename = timestamp + base + ext
+
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+    # Ensure final filepath is inside the configured upload folder (defense in depth)
+    upload_folder_abs = os.path.abspath(app.config['UPLOAD_FOLDER'])
+    filepath_abs = os.path.abspath(filepath)
+    try:
+        if os.path.commonpath([upload_folder_abs, filepath_abs]) != upload_folder_abs:
+            app.logger.error('Detected attempted path traversal in upload: %s', filepath_abs)
+            flash('Invalid upload path.', 'danger')
+            return redirect(url_for('admin_dashboard'))
+    except Exception as e:
+        app.logger.exception('Error validating upload path: %s', e)
+        flash('Invalid upload path.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    try:
+        with open(filepath, 'wb') as f:
+            f.write(data)
+    except Exception as e:
+        app.logger.exception('Failed to save uploaded file: %s', e)
+        flash('Failed to save uploaded file.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    title = request.form.get('title', file.filename)
+    composer = request.form.get('composer', '')
+
+    score = Score(
+        title=title,
+        composer=composer,
+        filename=filename,
+        uploaded_by=current_user.id
+    )
+    db.session.add(score)
+    db.session.commit()
+
+    flash('Score uploaded successfully!', 'success')
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/delete-score/<int:score_id>', methods=['POST'])
+@login_required
+def delete_score(score_id):
+    score = Score.query.get_or_404(score_id)
+
+    # Prepare file paths
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], score.filename)
+    backup_path = filepath + '.deleting'
+
+    # If the file exists, atomically move it to a backup location first.
+    # This lets us restore it if the DB deletion fails, avoiding inconsistency.
+    if os.path.exists(filepath):
+        try:
+            # os.replace is atomic on the same filesystem and will overwrite if target exists
+            os.replace(filepath, backup_path)
+        except Exception as e:
+            app.logger.exception('Failed to move score file before DB delete: %s', e)
+            flash('Failed to delete the file due to filesystem error. Aborting deletion.', 'danger')
+            return redirect(url_for('admin_dashboard'))
+    else:
+        # File is already missing; continue with DB deletion but warn the admin
+        backup_path = None
+        flash('File was not found on disk. Removing DB record to remain consistent.', 'warning')
+
+    # Attempt to delete the DB record. If this fails, try to restore the file from backup.
+    try:
+        db.session.delete(score)
+        db.session.commit()
+    except Exception as e:
+        app.logger.exception('Database error while deleting score record: %s', e)
+        # Try to restore the file from backup if we moved it
+        if backup_path:
+            try:
+                os.replace(backup_path, filepath)
+                flash('Database error occurred; file was restored. Please try again.', 'danger')
+            except Exception as restore_err:
+                app.logger.exception('Failed to restore score file after DB failure: %s', restore_err)
+                flash('Database error occurred and failed to restore file. Manual recovery required.', 'danger')
+        else:
+            flash('Database error occurred while deleting the record. Manual inspection required.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    # DB delete succeeded — clean up the backup file if it exists
+    if backup_path:
+        try:
+            if os.path.exists(backup_path):
+                os.remove(backup_path)
+        except Exception as cleanup_err:
+            app.logger.exception('Failed to remove backup file after successful DB deletion: %s', cleanup_err)
+            flash('Score record deleted but failed to remove temporary backup file; please delete it manually.', 'warning')
+
+    flash('Score deleted successfully.', 'success')
+    return redirect(url_for('admin_dashboard'))
+
+if __name__ == '__main__':
+    app.run(debug=True)
