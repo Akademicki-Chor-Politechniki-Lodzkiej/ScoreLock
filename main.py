@@ -36,3 +36,38 @@ def index():
         return redirect(url_for('library'))
     return redirect(url_for('login'))
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('library'))
+
+    if request.method == 'POST':
+        login_type = request.form.get('login_type')
+
+        if login_type == 'otp':
+            otp_code = request.form.get('otp_code')
+            otp = OTP.query.filter_by(code=otp_code, is_active=True).first()
+
+            if otp:
+                # Mark OTP as used
+                otp.used_at = datetime.utcnow()
+                db.session.commit()
+                flash('Welcome! You have been authenticated with OTP.', 'success')
+                return redirect(url_for('library'))
+            else:
+                flash('Invalid or expired OTP code.', 'danger')
+
+        elif login_type == 'admin':
+            username = request.form.get('username')
+            password = request.form.get('password')
+            admin = Admin.query.filter_by(username=username).first()
+
+            if admin and admin.check_password(password):
+                login_user(admin)
+                flash(f'Welcome back, {username}!', 'success')
+                return redirect(url_for('admin_dashboard'))
+            else:
+                flash('Invalid username or password.', 'danger')
+
+    return render_template('login.html')
+
