@@ -1,10 +1,10 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory, session
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 from models import db, Admin, OTP, Score
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from uuid import uuid4
 from flask_limiter import Limiter
@@ -19,6 +19,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'mysql+pymysql
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'scores')
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)  # OTP sessions last 1 hour by default
 
 # Initialize extensions
 db.init_app(app)
@@ -50,7 +51,8 @@ def load_user(user_id):
 # Routes
 @app.route('/')
 def index():
-    if current_user.is_authenticated:
+    # Allow access if admin logged in or OTP session present
+    if current_user.is_authenticated or session.get('otp_authenticated'):
         return redirect(url_for('library'))
     return redirect(url_for('login'))
 
@@ -71,7 +73,13 @@ def login():
                 # Mark OTP as used
                 otp.used_at = datetime.utcnow()
                 db.session.commit()
-                flash('Welcome! You have been authenticated with OTP.', 'success')
+
+                # Create a short-lived session flag for OTP-authenticated users
+                session.permanent = True
+                session['otp_authenticated'] = True
+                session['otp_id'] = otp.id
+
+                flash('Welcome! You have been authenticated with OTP for limited access.', 'success')
                 return redirect(url_for('library'))
             else:
                 flash('Invalid or expired OTP code.', 'danger')
@@ -91,10 +99,17 @@ def login():
     return render_template('login.html')
 
 @app.route('/logout')
-@login_required
 def logout():
-    logout_user()
-    flash('You have been logged out.', 'info')
+    # Clear OTP session flag if present
+    session.pop('otp_authenticated', None)
+    session.pop('otp_id', None)
+
+    # If admin is logged in, log them out
+    if current_user.is_authenticated:
+        logout_user()
+        flash('You have been logged out.', 'info')
+    else:
+        flash('Session cleared.', 'info')
     return redirect(url_for('login'))
 
 @app.route('/library')
