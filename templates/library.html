@@ -26,6 +26,7 @@
                         {% if current_user.is_authenticated %}
                         <form method="POST" action="{{ url_for('delete_score', score_id=score.id) }}"
                               onsubmit="return confirm('Are you sure you want to delete this score?');">
+                            {{ csrf_token() }}
                             <button type="submit" class="btn btn-sm btn-outline-danger">
                                 <i class="bi bi-trash"></i>
                             </button>
@@ -61,4 +62,3 @@
     {% endif %}
 </div>
 {% endblock %}
-

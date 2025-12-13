@@ -5,6 +5,7 @@ from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 from models import db, Admin, OTP, Score
 from datetime import datetime
+from flask_wtf import CSRFProtect
 
 # Load environment variables
 load_dotenv()
@@ -18,6 +19,7 @@ app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
 
 # Initialize extensions
 db.init_app(app)
+csrf = CSRFProtect(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
