@@ -131,30 +131,66 @@ def upload_score():
         flash('No file selected.', 'danger')
         return redirect(url_for('admin_dashboard'))
 
-    if file and file.filename.lower().endswith('.pdf'):
-        filename = secure_filename(file.filename)
-        # Add timestamp to prevent duplicates
-        timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S_')
-        filename = timestamp + filename
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
-
-        title = request.form.get('title', file.filename)
-        composer = request.form.get('composer', '')
-
-        score = Score(
-            title=title,
-            composer=composer,
-            filename=filename,
-            uploaded_by=current_user.id
-        )
-        db.session.add(score)
-        db.session.commit()
-
-        flash('Score uploaded successfully!', 'success')
-    else:
+    # Quick filename extension check
+    if not file.filename.lower().endswith('.pdf'):
         flash('Only PDF files are allowed.', 'danger')
+        return redirect(url_for('admin_dashboard'))
 
+    # Read file bytes (safe because MAX_CONTENT_LENGTH limits size)
+    from io import BytesIO
+    data = file.read()
+
+    # Basic PDF magic header check
+    if not data.startswith(b'%PDF'):
+        flash('Uploaded file is not a valid PDF (invalid header).', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    # Try to parse the PDF to ensure it's not a disguised binary
+    try:
+        try:
+            from PyPDF2 import PdfReader
+        except ModuleNotFoundError:
+            app.logger.exception('PyPDF2 library is not installed; cannot validate PDFs')
+            flash('Server misconfiguration: PDF validation library not available.', 'danger')
+            return redirect(url_for('admin_dashboard'))
+
+        reader = PdfReader(BytesIO(data))
+        # Ensure it has at least one page
+        if len(getattr(reader, 'pages', [])) == 0:
+            raise ValueError('PDF has no pages')
+    except Exception as e:
+        app.logger.exception('Uploaded file failed PDF validation: %s', e)
+        flash('Uploaded file is not a valid PDF.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    # Safe filename and save bytes to disk
+    filename = secure_filename(file.filename)
+    # Add timestamp to prevent duplicates
+    timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S_')
+    filename = timestamp + filename
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+    try:
+        with open(filepath, 'wb') as f:
+            f.write(data)
+    except Exception as e:
+        app.logger.exception('Failed to save uploaded file: %s', e)
+        flash('Failed to save uploaded file.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    title = request.form.get('title', file.filename)
+    composer = request.form.get('composer', '')
+
+    score = Score(
+        title=title,
+        composer=composer,
+        filename=filename,
+        uploaded_by=current_user.id
+    )
+    db.session.add(score)
+    db.session.commit()
+
+    flash('Score uploaded successfully!', 'success')
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/delete-score/<int:score_id>', methods=['POST'])
