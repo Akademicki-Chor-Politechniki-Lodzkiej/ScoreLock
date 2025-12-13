@@ -24,7 +24,7 @@
                 </div>
                 <div class="card-body">
                     <form method="POST" action="{{ url_for('upload_score') }}" enctype="multipart/form-data">
-                        {{ csrf_token() }}
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="mb-3">
                             <label for="title" class="form-label">Title</label>
                             <input type="text" class="form-control" id="title" name="title" required>
@@ -58,7 +58,7 @@
                 <div class="card-body">
                     <p>Generate a one-time password to give access to the library.</p>
                     <form method="POST" action="{{ url_for('generate_otp') }}">
-                        {{ csrf_token() }}
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-success">
                             <i class="bi bi-plus-circle"></i> Generate New OTP
                         </button>
@@ -81,7 +81,7 @@
                             </div>
                             <form method="POST" action="{{ url_for('deactivate_otp', otp_id=otp.id) }}"
                                   class="d-inline">
-                                {{ csrf_token() }}
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <button type="submit" class="btn btn-sm btn-outline-danger">
                                     <i class="bi bi-x-circle"></i> Deactivate
                                 </button>
@@ -134,7 +134,7 @@
                                               action="{{ url_for('delete_score', score_id=score.id) }}"
                                               class="d-inline"
                                               onsubmit="return confirm('Are you sure?');">
-                                            {{ csrf_token() }}
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <button type="submit" class="btn btn-sm btn-danger">
                                                 <i class="bi bi-trash"></i> Delete
                                             </button>

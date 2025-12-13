@@ -5,7 +5,7 @@ from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 from models import db, Admin, OTP, Score
 from datetime import datetime
-from flask_wtf import CSRFProtect
+from flask_wtf.csrf import CSRFProtect, generate_csrf
 from uuid import uuid4
 
 # Load environment variables
@@ -21,6 +21,16 @@ app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
 # Initialize extensions
 db.init_app(app)
 csrf = CSRFProtect(app)
+
+# Expose a helper in templates that returns the raw CSRF token string
+def _csrf_token():
+    try:
+        return generate_csrf()
+    except Exception:
+        return ''
+
+app.jinja_env.globals['csrf_token'] = _csrf_token
+
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
