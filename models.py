@@ -20,3 +20,20 @@ class Admin(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+class OTP(db.Model):
+    __tablename__ = 'otps'
+
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(20), unique=True, nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    used_at = db.Column(db.DateTime, nullable=True)
+    created_by = db.Column(db.Integer, db.ForeignKey('admins.id'), nullable=False)
+
+    admin = db.relationship('Admin', backref='otps_created')
+
+    @staticmethod
+    def generate_code():
+        """Generate a secure random OTP code"""
+        return secrets.token_urlsafe(12)
+
