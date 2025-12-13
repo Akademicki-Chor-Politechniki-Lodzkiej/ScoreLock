@@ -95,3 +95,13 @@ def admin_dashboard():
     scores = Score.query.order_by(Score.uploaded_at.desc()).all()
     return render_template('admin.html', otps=otps, scores=scores)
 
+@app.route('/admin/generate-otp', methods=['POST'])
+@login_required
+def generate_otp():
+    code = OTP.generate_code()
+    new_otp = OTP(code=code, created_by=current_user.id)
+    db.session.add(new_otp)
+    db.session.commit()
+    flash(f'OTP generated: {code}', 'success')
+    return redirect(url_for('admin_dashboard'))
+
