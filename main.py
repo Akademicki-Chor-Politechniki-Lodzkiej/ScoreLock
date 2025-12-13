@@ -230,6 +230,16 @@ def upload_score():
     # Add timestamp to prevent duplicates
     timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S_')
     filename = timestamp + filename
+    max_total_len = 200
+    max_base_len = max_total_len - len(ext) - len(timestamp)
+    if max_base_len < 0:
+        # If extension+timestamp alone exceed the limit, fall back to a UUID name
+        filename = f"{timestamp}{uuid4().hex}{ext}"
+    else:
+        if len(base) > max_base_len:
+            base = base[:max_base_len]
+        filename = timestamp + base + ext
+
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
 
     # Ensure final filepath is inside the configured upload folder (defense in depth)
