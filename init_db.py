@@ -1,6 +1,6 @@
 from main import app
 from models import db, Admin
-import sys
+import sys, getpass
 
 def init_db():
     """Initialize the database and create tables"""
@@ -14,7 +14,7 @@ def init_db():
         if admin_count == 0:
             print("\nNo admin users found. Let's create the first admin account.")
             username = input("Enter admin username: ")
-            password = input("Enter admin password: ")
+            password = getpass.getpass("Enter admin password: ")
 
             admin = Admin(username=username)
             admin.set_password(password)
@@ -39,7 +39,7 @@ def create_admin():
             print(f"Error: User '{username}' already exists!")
             sys.exit(1)
 
-        password = input("Enter admin password: ")
+        password = getpass.getpass("Enter admin password: ")
 
         admin = Admin(username=username)
         admin.set_password(password)
@@ -53,4 +53,3 @@ if __name__ == '__main__':
         create_admin()
     else:
         init_db()
-
