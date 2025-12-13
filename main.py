@@ -105,3 +105,15 @@ def generate_otp():
     flash(f'OTP generated: {code}', 'success')
     return redirect(url_for('admin_dashboard'))
 
+@app.route('/admin/deactivate-otp/<int:otp_id>', methods=['POST'])
+@login_required
+def deactivate_otp(otp_id):
+    otp = OTP.query.get_or_404(otp_id)
+    if otp.created_by == current_user.id:
+        otp.is_active = False
+        db.session.commit()
+        flash('OTP deactivated successfully.', 'success')
+    else:
+        flash('You can only deactivate your own OTPs.', 'danger')
+    return redirect(url_for('admin_dashboard'))
+
