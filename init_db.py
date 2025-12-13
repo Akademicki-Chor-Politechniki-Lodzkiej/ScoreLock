@@ -48,3 +48,9 @@ def create_admin():
 
         print(f"✓ Admin user '{username}' created successfully!")
 
+if __name__ == '__main__':
+    if len(sys.argv) > 1 and sys.argv[1] == 'create-admin':
+        create_admin()
+    else:
+        init_db()
+
