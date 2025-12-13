@@ -160,16 +160,54 @@ def upload_score():
 def delete_score(score_id):
     score = Score.query.get_or_404(score_id)
 
-    # Delete file
+    # Prepare file paths
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], score.filename)
-    if os.path.exists(filepath):
-        os.remove(filepath)
+    backup_path = filepath + '.deleting'
 
-    db.session.delete(score)
-    db.session.commit()
+    # If the file exists, atomically move it to a backup location first.
+    # This lets us restore it if the DB deletion fails, avoiding inconsistency.
+    if os.path.exists(filepath):
+        try:
+            # os.replace is atomic on the same filesystem and will overwrite if target exists
+            os.replace(filepath, backup_path)
+        except Exception as e:
+            app.logger.exception('Failed to move score file before DB delete: %s', e)
+            flash('Failed to delete the file due to filesystem error. Aborting deletion.', 'danger')
+            return redirect(url_for('admin_dashboard'))
+    else:
+        # File is already missing; continue with DB deletion but warn the admin
+        backup_path = None
+        flash('File was not found on disk. Removing DB record to remain consistent.', 'warning')
+
+    # Attempt to delete the DB record. If this fails, try to restore the file from backup.
+    try:
+        db.session.delete(score)
+        db.session.commit()
+    except Exception as e:
+        app.logger.exception('Database error while deleting score record: %s', e)
+        # Try to restore the file from backup if we moved it
+        if backup_path:
+            try:
+                os.replace(backup_path, filepath)
+                flash('Database error occurred; file was restored. Please try again.', 'danger')
+            except Exception as restore_err:
+                app.logger.exception('Failed to restore score file after DB failure: %s', restore_err)
+                flash('Database error occurred and failed to restore file. Manual recovery required.', 'danger')
+        else:
+            flash('Database error occurred while deleting the record. Manual inspection required.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    # DB delete succeeded — clean up the backup file if it exists
+    if backup_path:
+        try:
+            if os.path.exists(backup_path):
+                os.remove(backup_path)
+        except Exception as cleanup_err:
+            app.logger.exception('Failed to remove backup file after successful DB deletion: %s', cleanup_err)
+            flash('Score record deleted but failed to remove temporary backup file; please delete it manually.', 'warning')
+
     flash('Score deleted successfully.', 'success')
     return redirect(url_for('admin_dashboard'))
 
 if __name__ == '__main__':
     app.run(debug=True)
-
