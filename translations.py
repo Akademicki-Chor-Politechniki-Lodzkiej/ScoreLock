@@ -49,7 +49,7 @@ translations = {
         'password_label': 'Hasło',
         'access_library_btn': 'Dostęp do biblioteki',
         'admin_login_btn': 'Zaloguj jako admin',
-        'upload_title': 'Prześlij nowy partyturę',
+        'upload_title': 'Prześlij nową partyturę',
         'generate_otp_title': 'Generuj OTP',
         'generate_new_otp_btn': 'Generuj nowe OTP',
         'active_otps_title': 'Aktywne OTP',
