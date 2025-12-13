@@ -155,3 +155,18 @@ def upload_score():
 
     return redirect(url_for('admin_dashboard'))
 
+@app.route('/admin/delete-score/<int:score_id>', methods=['POST'])
+@login_required
+def delete_score(score_id):
+    score = Score.query.get_or_404(score_id)
+
+    # Delete file
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], score.filename)
+    if os.path.exists(filepath):
+        os.remove(filepath)
+
+    db.session.delete(score)
+    db.session.commit()
+    flash('Score deleted successfully.', 'success')
+    return redirect(url_for('admin_dashboard'))
+
