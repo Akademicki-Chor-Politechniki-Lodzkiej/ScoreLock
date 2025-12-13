@@ -9,6 +9,7 @@ from flask_wtf.csrf import CSRFProtect, generate_csrf
 from uuid import uuid4
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from urllib.parse import urlparse, urljoin
 
 # Load environment variables
 load_dotenv()
@@ -49,14 +50,27 @@ app.jinja_env.globals['t'] = t
 app.jinja_env.globals['available_languages'] = available_languages
 
 
+def is_safe_url(target):
+    """Return True if the target URL is same-origin (safe) relative to the request host."""
+    try:
+        host_url = request.host_url
+        ref_url = urlparse(host_url)
+        test_url = urlparse(urljoin(host_url, target))
+        return test_url.scheme in ("http", "https") and ref_url.netloc == test_url.netloc
+    except Exception:
+        return False
+
+
 @app.route('/set_language', methods=['POST'])
 def set_language():
     lang = request.form.get('lang')
     if lang in translations:
         session['lang'] = lang
-    # Redirect back to referring page if possible
-    ref = request.referrer or url_for('index')
-    return redirect(ref)
+    # Redirect back to referring page if it's same-origin; otherwise go to index
+    ref = request.referrer
+    if ref and is_safe_url(ref):
+        return redirect(ref)
+    return redirect(url_for('index'))
 
 login_manager = LoginManager()
 login_manager.init_app(app)
