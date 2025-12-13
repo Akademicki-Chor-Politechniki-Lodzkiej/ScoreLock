@@ -98,7 +98,8 @@ def login():
 
             if admin and admin.check_password(password):
                 login_user(admin)
-                flash(f'Welcome back, {username}!', 'success')
+                # Avoid echoing username (user-controlled) into a flash message to prevent possible XSS
+                flash('Welcome back!', 'success')
                 return redirect(url_for('admin_dashboard'))
             else:
                 flash('Invalid username or password.', 'danger')
