@@ -25,3 +25,7 @@ login_manager.login_view = 'login'
 # Create upload folder if it doesn't exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
+@login_manager.user_loader
+def load_user(user_id):
+    return Admin.query.get(int(user_id))
+
