@@ -117,3 +117,41 @@ def deactivate_otp(otp_id):
         flash('You can only deactivate your own OTPs.', 'danger')
     return redirect(url_for('admin_dashboard'))
 
+@app.route('/admin/upload', methods=['POST'])
+@login_required
+def upload_score():
+    if 'file' not in request.files:
+        flash('No file provided.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    file = request.files['file']
+    if file.filename == '':
+        flash('No file selected.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    if file and file.filename.lower().endswith('.pdf'):
+        filename = secure_filename(file.filename)
+        # Add timestamp to prevent duplicates
+        timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S_')
+        filename = timestamp + filename
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+
+        title = request.form.get('title', file.filename)
+        composer = request.form.get('composer', '')
+
+        score = Score(
+            title=title,
+            composer=composer,
+            filename=filename,
+            uploaded_by=current_user.id
+        )
+        db.session.add(score)
+        db.session.commit()
+
+        flash('Score uploaded successfully!', 'success')
+    else:
+        flash('Only PDF files are allowed.', 'danger')
+
+    return redirect(url_for('admin_dashboard'))
+
