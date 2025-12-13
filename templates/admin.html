@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 
-{% block title %}Admin Dashboard - ScoreLock{% endblock %}
+{% block title %}{{ t('upload_title') }} - {{ t('brand') }}{% endblock %}
 
 {% block content %}
 <div class="container py-5">
     <div class="row mb-4">
         <div class="col">
             <h1 class="display-4">
-                <i class="bi bi-gear"></i> Admin Dashboard
+                <i class="bi bi-gear"></i> {{ t('nav_admin') }}
             </h1>
-            <p class="lead text-muted">Manage your score library and access codes</p>
+            <p class="lead text-muted">{{ t('generate_otp_title') }} &amp; {{ t('upload_title') }}</p>
         </div>
     </div>
 
@@ -19,28 +19,28 @@
             <div class="card shadow-sm h-100">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
-                        <i class="bi bi-cloud-upload"></i> Upload New Score
+                        <i class="bi bi-cloud-upload"></i> {{ t('upload_title') }}
                     </h5>
                 </div>
                 <div class="card-body">
                     <form method="POST" action="{{ url_for('upload_score') }}" enctype="multipart/form-data">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="mb-3">
-                            <label for="title" class="form-label">Title</label>
+                            <label for="title" class="form-label">{{ t('title_label') }}</label>
                             <input type="text" class="form-control" id="title" name="title" required>
                         </div>
                         <div class="mb-3">
-                            <label for="composer" class="form-label">Composer</label>
+                            <label for="composer" class="form-label">{{ t('composer_label') }}</label>
                             <input type="text" class="form-control" id="composer" name="composer">
                         </div>
                         <div class="mb-3">
-                            <label for="file" class="form-label">PDF File</label>
+                            <label for="file" class="form-label">{{ t('file_label') }}</label>
                             <input type="file" class="form-control" id="file" name="file"
                                    accept=".pdf" required>
                             <div class="form-text">Maximum file size: 50MB</div>
                         </div>
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-upload"></i> Upload Score
+                            <i class="bi bi-upload"></i> {{ t('upload_score_btn') }}
                         </button>
                     </form>
                 </div>
@@ -52,21 +52,21 @@
             <div class="card shadow-sm h-100">
                 <div class="card-header bg-success text-white">
                     <h5 class="mb-0">
-                        <i class="bi bi-key"></i> Generate OTP
+                        <i class="bi bi-key"></i> {{ t('generate_otp_title') }}
                     </h5>
                 </div>
                 <div class="card-body">
-                    <p>Generate a one-time password to give access to the library.</p>
+                    <p>{{ t('generate_otp_title') }} {{ t('no_otps') }}</p>
                     <form method="POST" action="{{ url_for('generate_otp') }}">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-success">
-                            <i class="bi bi-plus-circle"></i> Generate New OTP
+                            <i class="bi bi-plus-circle"></i> {{ t('generate_new_otp_btn') }}
                         </button>
                     </form>
 
                     <hr class="my-4">
 
-                    <h6 class="mb-3">Active OTPs</h6>
+                    <h6 class="mb-3">{{ t('active_otps_title') }}</h6>
                     {% if otps %}
                     <div class="list-group">
                         {% for otp in otps %}
@@ -76,14 +76,14 @@
                                 <code class="fs-6">{{ otp.code }}</code>
                                 <br>
                                 <small class="text-muted">
-                                    Created: {{ otp.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                    {{ t('created_label') }}: {{ otp.created_at.strftime('%Y-%m-%d %H:%M') }}
                                 </small>
                             </div>
                             <form method="POST" action="{{ url_for('deactivate_otp', otp_id=otp.id) }}"
                                   class="d-inline">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <button type="submit" class="btn btn-sm btn-outline-danger">
-                                    <i class="bi bi-x-circle"></i> Deactivate
+                                    <i class="bi bi-x-circle"></i> {{ t('deactivate_btn') }}
                                 </button>
                             </form>
                         </div>
@@ -91,7 +91,7 @@
                         {% endfor %}
                     </div>
                     {% else %}
-                    <p class="text-muted">No OTPs generated yet.</p>
+                    <p class="text-muted">{{ t('no_otps') }}</p>
                     {% endif %}
                 </div>
             </div>
@@ -104,7 +104,7 @@
             <div class="card shadow-sm">
                 <div class="card-header bg-dark text-white">
                     <h5 class="mb-0">
-                        <i class="bi bi-collection"></i> All Scores
+                        <i class="bi bi-collection"></i> {{ t('all_scores_title') }}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -113,10 +113,10 @@
                         <table class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th>Title</th>
-                                    <th>Composer</th>
-                                    <th>Uploaded</th>
-                                    <th>Actions</th>
+                                    <th>{{ t('title_label') }}</th>
+                                    <th>{{ t('composer_label') }}</th>
+                                    <th>{{ t('uploaded_label') }}</th>
+                                    <th>{{ t('actions_label') }}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -128,15 +128,15 @@
                                     <td>
                                         <a href="{{ url_for('view_score', score_id=score.id) }}"
                                            class="btn btn-sm btn-primary" target="_blank">
-                                            <i class="bi bi-eye"></i> View
+                                            <i class="bi bi-eye"></i> {{ t('view_btn') }}
                                         </a>
                                         <form method="POST"
                                               action="{{ url_for('delete_score', score_id=score.id) }}"
                                               class="d-inline"
-                                              onsubmit="return confirm('Are you sure?');">
+                                              onsubmit="return confirm({{ t('confirm_delete')|tojson }});">
                                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <button type="submit" class="btn btn-sm btn-danger">
-                                                <i class="bi bi-trash"></i> Delete
+                                                <i class="bi bi-trash"></i> {{ t('delete_btn') }}
                                             </button>
                                         </form>
                                     </td>
@@ -146,7 +146,7 @@
                         </table>
                     </div>
                     {% else %}
-                    <p class="text-muted">No scores uploaded yet.</p>
+                    <p class="text-muted">{{ t('no_scores') }}</p>
                     {% endif %}
                 </div>
             </div>

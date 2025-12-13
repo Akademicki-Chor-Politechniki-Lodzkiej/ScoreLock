@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}ScoreLock{% endblock %}</title>
+    <title>{% block title %}{{ t('brand') }}{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
@@ -14,7 +14,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
             <a class="navbar-brand" href="{{ url_for('library') }}">
-                <i class="bi bi-music-note-beamed"></i> ScoreLock
+                <i class="bi bi-music-note-beamed"></i> {{ t('brand') }}
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -23,19 +23,19 @@
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('library') }}">
-                            <i class="bi bi-collection"></i> Library
+                            <i class="bi bi-collection"></i> {{ t('nav_library') }}
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
-                            <i class="bi bi-gear"></i> Admin Panel
+                            <i class="bi bi-gear"></i> {{ t('nav_admin') }}
                         </a>
                     </li>
                 </ul>
                 <ul class="navbar-nav">
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('logout') }}">
-                            <i class="bi bi-box-arrow-right"></i> Logout
+                            <i class="bi bi-box-arrow-right"></i> {{ t('nav_logout') }}
                         </a>
                     </li>
                 </ul>
@@ -43,6 +43,18 @@
         </div>
     </nav>
     {% endif %}
+
+    <!-- Language selector (always visible) -->
+    <div class="container mt-2 text-end">
+        <form method="POST" action="{{ url_for('set_language') }}" class="d-inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <select name="lang" onchange="this.form.submit()" class="form-select form-select-sm d-inline w-auto">
+                {% for lang in available_languages %}
+                    <option value="{{ lang }}" {% if session.get('lang','en') == lang %}selected{% endif %}>{{ lang.upper() }}</option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
 
     <main class="{% if not current_user.is_authenticated %}login-page{% endif %}">
         {% with messages = get_flashed_messages(with_categories=true) %}

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Login - ScoreLock{% endblock %}
+{% block title %}{{ t('login_title') }}{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -10,21 +10,21 @@
                 <div class="card-body p-5">
                     <div class="text-center mb-4">
                         <i class="bi bi-music-note-beamed display-1 text-primary"></i>
-                        <h2 class="mt-3">ScoreLock</h2>
-                        <p class="text-muted">Sheet Music Library</p>
+                        <h2 class="mt-3">{{ t('brand') }}</h2>
+                        <p class="text-muted">{{ t('app_subtitle') }}</p>
                     </div>
 
                     <ul class="nav nav-pills nav-justified mb-4" role="tablist">
                         <li class="nav-item" role="presentation">
                             <button class="nav-link active" id="otp-tab" data-bs-toggle="pill" data-bs-target="#otp"
                                     type="button" role="tab">
-                                <i class="bi bi-key"></i> One-Time Password
+                                <i class="bi bi-key"></i> {{ t('otp_tab') }}
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" id="admin-tab" data-bs-toggle="pill" data-bs-target="#admin"
                                     type="button" role="tab">
-                                <i class="bi bi-shield-lock"></i> Admin Login
+                                <i class="bi bi-shield-lock"></i> {{ t('admin_tab') }}
                             </button>
                         </li>
                     </ul>
@@ -36,13 +36,13 @@
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <input type="hidden" name="login_type" value="otp">
                                 <div class="mb-3">
-                                    <label for="otp_code" class="form-label">Enter Your Access Code</label>
+                                    <label for="otp_code" class="form-label">{{ t('enter_access_code') }}</label>
                                     <input type="password" class="form-control form-control-lg" id="otp_code"
                                            name="otp_code" required autofocus
-                                           placeholder="Enter OTP code">
+                                           placeholder="{{ t('enter_access_code') }}">
                                 </div>
                                 <button type="submit" class="btn btn-primary btn-lg w-100">
-                                    <i class="bi bi-unlock"></i> Access Library
+                                    <i class="bi bi-unlock"></i> {{ t('access_library_btn') }}
                                 </button>
                             </form>
                         </div>
@@ -53,17 +53,17 @@
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <input type="hidden" name="login_type" value="admin">
                                 <div class="mb-3">
-                                    <label for="username" class="form-label">Username</label>
+                                    <label for="username" class="form-label">{{ t('username_label') }}</label>
                                     <input type="text" class="form-control" id="username"
-                                           name="username" required placeholder="Enter username">
+                                           name="username" required placeholder="{{ t('username_label') }}">
                                 </div>
                                 <div class="mb-3">
-                                    <label for="password" class="form-label">Password</label>
+                                    <label for="password" class="form-label">{{ t('password_label') }}</label>
                                     <input type="password" class="form-control" id="password"
-                                           name="password" required placeholder="Enter password">
+                                           name="password" required placeholder="{{ t('password_label') }}">
                                 </div>
                                 <button type="submit" class="btn btn-dark btn-lg w-100">
-                                    <i class="bi bi-shield-check"></i> Admin Login
+                                    <i class="bi bi-shield-check"></i> {{ t('admin_login_btn') }}
                                 </button>
                             </form>
                         </div>
