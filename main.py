@@ -37,73 +37,8 @@ def _csrf_token():
 
 app.jinja_env.globals['csrf_token'] = _csrf_token
 
-# --- Internationalization (simple map) ---
-translations = {
-    'en': {
-        'brand': 'ScoreLock',
-        'nav_library': 'Library',
-        'nav_admin': 'Admin Panel',
-        'nav_logout': 'Logout',
-        'login_title': 'Login - ScoreLock',
-        'otp_tab': 'One-Time Password',
-        'admin_tab': 'Admin Login',
-        'enter_access_code': 'Enter Your Access Code',
-        'username_label': 'Username',
-        'password_label': 'Password',
-        'access_library_btn': 'Access Library',
-        'admin_login_btn': 'Admin Login',
-        'upload_title': 'Upload New Score',
-        'generate_otp_title': 'Generate OTP',
-        'generate_new_otp_btn': 'Generate New OTP',
-        'active_otps_title': 'Active OTPs',
-        'deactivate_btn': 'Deactivate',
-        'all_scores_title': 'All Scores',
-        'upload_score_btn': 'Upload Score',
-        'view_btn': 'View',
-        'delete_btn': 'Delete',
-        'no_scores': 'No scores available yet',
-        'no_otps': 'No OTPs generated yet.',
-        'title_label': 'Title',
-        'composer_label': 'Composer',
-        'file_label': 'PDF File',
-        'uploaded_label': 'Uploaded',
-        'actions_label': 'Actions',
-        'confirm_delete': 'Are you sure?'
-    },
-    'pl': {
-        'brand': 'ScoreLock',
-        'nav_library': 'Biblioteka',
-        'nav_admin': 'Panel Admina',
-        'nav_logout': 'Wyloguj',
-        'login_title': 'Logowanie - ScoreLock',
-        'otp_tab': 'Jednorazowe Hasło',
-        'admin_tab': 'Logowanie Admina',
-        'enter_access_code': 'Wprowadź kod dostępu',
-        'username_label': 'Nazwa użytkownika',
-        'password_label': 'Hasło',
-        'access_library_btn': 'Dostęp do biblioteki',
-        'admin_login_btn': 'Zaloguj jako admin',
-        'upload_title': 'Prześlij nowy partyturę',
-        'generate_otp_title': 'Generuj OTP',
-        'generate_new_otp_btn': 'Generuj nowe OTP',
-        'active_otps_title': 'Aktywne OTP',
-        'deactivate_btn': 'Dezaktywuj',
-        'all_scores_title': 'Wszystkie partytury',
-        'upload_score_btn': 'Prześlij',
-        'view_btn': 'Podgląd',
-        'delete_btn': 'Usuń',
-        'no_scores': 'Brak partytur',
-        'no_otps': 'Brak wygenerowanych OTP.',
-        'title_label': 'Tytuł',
-        'composer_label': 'Kompozytor',
-        'file_label': 'Plik PDF',
-        'uploaded_label': 'Przesłano',
-        'actions_label': 'Akcje',
-        'confirm_delete': 'Czy na pewno?'
-    }
-}
-
-available_languages = list(translations.keys())
+# Load translations from separate module
+from translations import translations, available_languages
 
 def t(key):
     """Translate key using current session language (fallback to English or key)."""
