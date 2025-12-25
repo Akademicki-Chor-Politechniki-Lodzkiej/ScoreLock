@@ -261,6 +261,42 @@ def deactivate_otp(otp_id):
         flash('You can only deactivate your own OTPs.', 'danger')
     return redirect(url_for('admin_dashboard'))
 
+@app.route('/admin/edit-score/<int:score_id>', methods=['POST'])
+@login_required
+def edit_score(score_id):
+    score = Score.query.get_or_404(score_id)
+
+    # Get form data
+    title = request.form.get('title', '').strip()
+    composer = request.form.get('composer', '').strip()
+
+    # Validate title
+    if not title:
+        flash('Title is required.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    if len(title) > 200:
+        flash('Title is too long (max 200 characters).', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    if len(composer) > 200:
+        flash('Composer name is too long (max 200 characters).', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    # Update score
+    score.title = title
+    score.composer = composer if composer else None
+
+    try:
+        db.session.commit()
+        flash('Score details updated successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        app.logger.exception('Failed to update score: %s', e)
+        flash('Failed to update score details.', 'danger')
+
+    return redirect(url_for('admin_dashboard'))
+
 @app.route('/admin/upload', methods=['POST'])
 @login_required
 def upload_score():
