@@ -181,7 +181,7 @@ def library():
 
     per_page = ITEMS_PER_PAGE  # number of items per page
 
-    if q == '':
+    if not q:
         query = Score.query.order_by(Score.uploaded_at.desc())
     else:
         # Escape SQL LIKE wildcards so user input is treated literally.
