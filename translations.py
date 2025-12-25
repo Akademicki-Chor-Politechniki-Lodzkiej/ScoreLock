@@ -79,7 +79,7 @@ translations = {
         'search_placeholder': 'Szukaj według tytułu lub kompozytora',
         'search_btn': 'Szukaj',
         'clear': 'Wyczyść',
-        'showing_results_for': 'Wyświetlane wyniki dla',
+        'showing_results_for': 'Wyniki wyszukiwania dla',
         'footer_credit': 'Stworzone z ❤️ przez dział IT AChPŁ'
     }
 }
