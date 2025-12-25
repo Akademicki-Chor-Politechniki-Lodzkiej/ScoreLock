@@ -172,7 +172,7 @@ def library():
     page_raw = request.args.get('page', 1)
     try:
         page = int(page_raw)
-    except Exception:
+    except (TypeError, ValueError):
         page = 1
     if page < 1:
         page = 1
