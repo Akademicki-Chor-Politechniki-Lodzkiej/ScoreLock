@@ -40,8 +40,6 @@ translations = {
         'search_btn': 'Search',
         'clear': 'Clear',
         'showing_results_for': 'Showing results for',
-        'view_tiles': 'Tiles',
-        'view_list': 'List',
         'footer_credit': 'Created with ❤️ by AChPŁ IT Department'
     },
     'pl': {
@@ -82,8 +80,6 @@ translations = {
         'search_btn': 'Szukaj',
         'clear': 'Wyczyść',
         'showing_results_for': 'Wyniki wyszukiwania dla',
-        'view_tiles': 'Kafelki',
-        'view_list': 'Lista',
         'footer_credit': 'Stworzone z ❤️ przez dział IT AChPŁ'
     }
 }

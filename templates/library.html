@@ -11,6 +11,13 @@
             </h1>
             <p class="lead text-muted">{{ t('library_subtitle') }}</p>
         </div>
+        <div class="col-auto align-self-center">
+            {% if session.get('otp_authenticated') and not current_user.is_authenticated %}
+            <a href="{{ url_for('logout') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-box-arrow-right"></i> {{ t('nav_logout') }}
+            </a>
+            {% endif %}
+        </div>
     </div>
 
     <!-- Search form -->
@@ -31,28 +38,7 @@
         </div>
     </div>
 
-    <!-- View toggle -->
-    <div class="row mb-3">
-        <div class="col-12 d-flex justify-content-end">
-            <div class="btn-group btn-group-sm" role="group" aria-label="View type">
-                <a href="{% if q %}{{ url_for('library', q=q, view='tiles', page=pagination.page if pagination else 1) }}{% else %}{{ url_for('library', view='tiles', page=pagination.page if pagination else 1) }}{% endif %}"
-                   class="btn {% if view == 'tiles' %}btn-primary{% else %}btn-outline-primary{% endif %}"
-                   aria-label="{{ t('view_tiles') }}">
-                    <i class="bi bi-grid-3x3-gap"></i> {{ t('view_tiles') }}
-                </a>
-                <a href="{% if q %}{{ url_for('library', q=q, view='list', page=pagination.page if pagination else 1) }}{% else %}{{ url_for('library', view='list', page=pagination.page if pagination else 1) }}{% endif %}"
-                   class="btn {% if view == 'list' %}btn-primary{% else %}btn-outline-primary{% endif %}"
-                   aria-label="{{ t('view_list') }}">
-                    <i class="bi bi-list-ul"></i> {{ t('view_list') }}
-                </a>
-            </div>
-        </div>
-    </div>
-
     {% if scores %}
-
-    {% if view == 'tiles' %}
-    <!-- Tiles View -->
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
         {% for score in scores %}
         <div class="col">
@@ -92,64 +78,6 @@
         </div>
         {% endfor %}
     </div>
-
-    {% else %}
-    <!-- List View (Table) -->
-    <div class="table-responsive">
-        <table class="table table-hover align-middle">
-            <thead class="table-light">
-                <tr>
-                    <th scope="col" style="width: 5%;"><i class="bi bi-file-music"></i></th>
-                    <th scope="col" style="width: 35%;">{{ t('title_label') }}</th>
-                    <th scope="col" style="width: 25%;">{{ t('composer_label') }}</th>
-                    <th scope="col" style="width: 20%;">{{ t('uploaded_label') }}</th>
-                    <th scope="col" style="width: 15%;" class="text-end">{{ t('actions_label') }}</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for score in scores %}
-                <tr>
-                    <td class="text-center">
-                        <i class="bi bi-file-pdf-fill text-primary fs-4"></i>
-                    </td>
-                    <td>
-                        <strong>{{ score.title }}</strong>
-                    </td>
-                    <td>
-                        {% if score.composer %}
-                        <span class="text-muted">{{ score.composer }}</span>
-                        {% else %}
-                        <span class="text-muted fst-italic">—</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <small class="text-muted">{{ score.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</small>
-                    </td>
-                    <td class="text-end">
-                        <div class="btn-group btn-group-sm" role="group">
-                            <a href="{{ url_for('view_score', score_id=score.id) }}"
-                               class="btn btn-outline-primary" target="_blank"
-                               title="{{ t('view_btn') }}">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                            {% if current_user.is_authenticated %}
-                            <form method="POST" action="{{ url_for('delete_score', score_id=score.id) }}"
-                                  onsubmit="return confirm({{ t('confirm_delete')|tojson }});"
-                                  class="d-inline">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <button type="submit" class="btn btn-outline-danger btn-sm" title="{{ t('delete_btn') }}">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </form>
-                            {% endif %}
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% endif %}
     {% else %}
     <div class="text-center py-5">
         <i class="bi bi-music-note-list display-1 text-muted"></i>
@@ -163,7 +91,7 @@
         <ul class="pagination justify-content-center">
             {% if pagination.has_prev %}
             <li class="page-item">
-                <a class="page-link" href="{% if q %}{{ url_for('library', q=q, view=view, page=pagination.prev_num) }}{% else %}{{ url_for('library', view=view, page=pagination.prev_num) }}{% endif %}" aria-label="Previous">
+                <a class="page-link" href="{% if q %}{{ url_for('library', q=q, page=pagination.prev_num) }}{% else %}{{ url_for('library', page=pagination.prev_num) }}{% endif %}" aria-label="Previous">
                     <span aria-hidden="true">&laquo;</span>
                 </a>
             </li>
@@ -178,7 +106,7 @@
             {% if pagination.page == 1 %}
             <li class="page-item active"><span class="page-link" aria-current="page">1</span></li>
             {% else %}
-            <li class="page-item"><a class="page-link" href="{% if q %}{{ url_for('library', q=q, view=view, page=1) }}{% else %}{{ url_for('library', view=view, page=1) }}{% endif %}">1</a></li>
+            <li class="page-item"><a class="page-link" href="{% if q %}{{ url_for('library', q=q, page=1) }}{% else %}{{ url_for('library', page=1) }}{% endif %}">1</a></li>
             {% endif %}
              {% if start > 2 %}
              <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
@@ -189,7 +117,7 @@
             {% if p == pagination.page %}
             <li class="page-item active"><span class="page-link" aria-current="page">{{ p }}</span></li>
             {% else %}
-            <li class="page-item"><a class="page-link" href="{% if q %}{{ url_for('library', q=q, view=view, page=p) }}{% else %}{{ url_for('library', view=view, page=p) }}{% endif %}">{{ p }}</a></li>
+            <li class="page-item"><a class="page-link" href="{% if q %}{{ url_for('library', q=q, page=p) }}{% else %}{{ url_for('library', page=p) }}{% endif %}">{{ p }}</a></li>
             {% endif %}
             {% endfor %}
 
@@ -200,13 +128,13 @@
             {% if pagination.page == pagination.pages %}
             <li class="page-item active"><span class="page-link" aria-current="page">{{ pagination.pages }}</span></li>
             {% else %}
-            <li class="page-item"><a class="page-link" href="{% if q %}{{ url_for('library', q=q, view=view, page=pagination.pages) }}{% else %}{{ url_for('library', view=view, page=pagination.pages) }}{% endif %}">{{ pagination.pages }}</a></li>
+            <li class="page-item"><a class="page-link" href="{% if q %}{{ url_for('library', q=q, page=pagination.pages) }}{% else %}{{ url_for('library', page=pagination.pages) }}{% endif %}">{{ pagination.pages }}</a></li>
             {% endif %}
             {% endif %}
 
             {% if pagination.has_next %}
             <li class="page-item">
-                <a class="page-link" href="{% if q %}{{ url_for('library', q=q, view=view, page=pagination.next_num) }}{% else %}{{ url_for('library', view=view, page=pagination.next_num) }}{% endif %}" aria-label="Next">
+                <a class="page-link" href="{% if q %}{{ url_for('library', q=q, page=pagination.next_num) }}{% else %}{{ url_for('library', page=pagination.next_num) }}{% endif %}" aria-label="Next">
                     <span aria-hidden="true">&raquo;</span>
                 </a>
             </li>
