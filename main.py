@@ -170,6 +170,11 @@ def library():
     if len(q) > max_query_length:
         q = q[:max_query_length]
 
+    # View type: 'tiles' (default) or 'list'
+    view = request.args.get('view', 'tiles')
+    if view not in ['tiles', 'list']:
+        view = 'tiles'
+
     # Pagination parameters
     page_raw = request.args.get('page', 1)
     try:
@@ -197,7 +202,7 @@ def library():
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     scores = pagination.items
 
-    return render_template('library.html', scores=scores, q=q, pagination=pagination)
+    return render_template('library.html', scores=scores, q=q, pagination=pagination, view=view)
 
 @app.route('/scores/<int:score_id>')
 def view_score(score_id):
