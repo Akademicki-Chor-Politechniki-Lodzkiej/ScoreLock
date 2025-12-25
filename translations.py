@@ -42,6 +42,12 @@ translations = {
         'showing_results_for': 'Showing results for',
         'view_tiles': 'Tiles',
         'view_list': 'List',
+        'sort_by': 'Sort by',
+        'sort_date_newest': 'Newest first',
+        'sort_date_oldest': 'Oldest first',
+        'sort_title_az': 'Title (A-Z)',
+        'sort_title_za': 'Title (Z-A)',
+        'sort_composer_az': 'Composer (A-Z)',
         'footer_credit': 'Created with ❤️ by AChPŁ IT Department'
     },
     'pl': {
@@ -84,6 +90,12 @@ translations = {
         'showing_results_for': 'Wyniki wyszukiwania dla',
         'view_tiles': 'Kafelki',
         'view_list': 'Lista',
+        'sort_by': 'Sortuj według',
+        'sort_date_newest': 'Najnowsze pierwsze',
+        'sort_date_oldest': 'Najstarsze pierwsze',
+        'sort_title_az': 'Tytuł (A-Z)',
+        'sort_title_za': 'Tytuł (Z-A)',
+        'sort_composer_az': 'Kompozytor (A-Z)',
         'footer_credit': 'Stworzone z ❤️ przez dział IT AChPŁ'
     }
 }
