@@ -39,7 +39,9 @@
     </div>
 
     {% if scores %}
+
     {% if view == 'tiles' %}
+    <!-- Tiles View -->
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
         {% for score in scores %}
         <div class="col">
@@ -79,6 +81,8 @@
         </div>
         {% endfor %}
     </div>
+
+    {% else %}
     <!-- List View (Table) -->
     <div class="table-responsive">
         <table class="table table-hover align-middle">
