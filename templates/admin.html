@@ -126,19 +126,29 @@
                                     <td>{{ score.composer or '-' }}</td>
                                     <td>{{ score.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</td>
                                     <td>
-                                        <a href="{{ url_for('view_score', score_id=score.id) }}"
-                                           class="btn btn-sm btn-primary" target="_blank">
-                                            <i class="bi bi-eye"></i> {{ t('view_btn') }}
-                                        </a>
-                                        <form method="POST"
-                                              action="{{ url_for('delete_score', score_id=score.id) }}"
-                                              class="d-inline"
-                                              onsubmit="return confirm({{ t('confirm_delete')|tojson }});">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                            <button type="submit" class="btn btn-sm btn-danger">
-                                                <i class="bi bi-trash"></i> {{ t('delete_btn') }}
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{{ url_for('view_score', score_id=score.id) }}"
+                                               class="btn btn-primary" target="_blank"
+                                               title="{{ t('view_btn') }}">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-warning"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#editModal{{ score.id }}"
+                                                    title="{{ t('edit_btn') }}">
+                                                <i class="bi bi-pencil"></i>
                                             </button>
-                                        </form>
+                                            <form method="POST"
+                                                  action="{{ url_for('delete_score', score_id=score.id) }}"
+                                                  class="d-inline"
+                                                  onsubmit="return confirm({{ t('confirm_delete')|tojson }});">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn-danger"
+                                                        title="{{ t('delete_btn') }}">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -153,4 +163,48 @@
         </div>
     </div>
 </div>
+
+<!-- Edit Score Modals -->
+{% if scores %}
+{% for score in scores %}
+<div class="modal fade" id="editModal{{ score.id }}" tabindex="-1" aria-labelledby="editModalLabel{{ score.id }}" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editModalLabel{{ score.id }}">
+                    <i class="bi bi-pencil"></i> {{ t('edit_score_title') }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('edit_score', score_id=score.id) }}">
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label for="edit_title{{ score.id }}" class="form-label">{{ t('title_label') }}</label>
+                        <input type="text" class="form-control" id="edit_title{{ score.id }}"
+                               name="title" value="{{ score.title }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_composer{{ score.id }}" class="form-label">{{ t('composer_label') }}</label>
+                        <input type="text" class="form-control" id="edit_composer{{ score.id }}"
+                               name="composer" value="{{ score.composer or '' }}">
+                    </div>
+                    <div class="alert alert-info mb-0">
+                        <small><i class="bi bi-info-circle"></i> {{ t('edit_score_note') }}</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x"></i> {{ t('cancel_btn') }}
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check"></i> {{ t('save_changes_btn') }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
 {% endblock %}
