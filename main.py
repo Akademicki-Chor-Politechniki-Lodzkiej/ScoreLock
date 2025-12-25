@@ -163,8 +163,6 @@ def library():
     # Support simple search via ?q=term (searches title and composer, case-insensitive)
     q = request.args.get('q', '')
     # Sanitize and limit length to avoid abuse
-    if q is None:
-        q = ''
     q = q.strip()
     max_q_len = 200
     if len(q) > max_q_len:
