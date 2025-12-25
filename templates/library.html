@@ -11,6 +11,13 @@
             </h1>
             <p class="lead text-muted">{{ t('library_subtitle') }}</p>
         </div>
+        <div class="col-auto align-self-center">
+            {% if session.get('otp_authenticated') and not current_user.is_authenticated %}
+            <a href="{{ url_for('logout') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-box-arrow-right"></i> {{ t('nav_logout') }}
+            </a>
+            {% endif %}
+        </div>
     </div>
 
     {% if scores %}
