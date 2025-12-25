@@ -39,6 +39,7 @@
     </div>
 
     {% if scores %}
+    {% if view == 'tiles' %}
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
         {% for score in scores %}
         <div class="col">
@@ -78,6 +79,62 @@
         </div>
         {% endfor %}
     </div>
+    <!-- List View (Table) -->
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col" style="width: 5%;"><i class="bi bi-file-music"></i></th>
+                    <th scope="col" style="width: 35%;">{{ t('title_label') }}</th>
+                    <th scope="col" style="width: 25%;">{{ t('composer_label') }}</th>
+                    <th scope="col" style="width: 20%;">{{ t('uploaded_label') }}</th>
+                    <th scope="col" style="width: 15%;" class="text-end">{{ t('actions_label') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for score in scores %}
+                <tr>
+                    <td class="text-center">
+                        <i class="bi bi-file-pdf-fill text-primary fs-4"></i>
+                    </td>
+                    <td>
+                        <strong>{{ score.title }}</strong>
+                    </td>
+                    <td>
+                        {% if score.composer %}
+                        <span class="text-muted">{{ score.composer }}</span>
+                        {% else %}
+                        <span class="text-muted fst-italic">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <small class="text-muted">{{ score.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                    </td>
+                    <td class="text-end">
+                        <div class="btn-group btn-group-sm" role="group">
+                            <a href="{{ url_for('view_score', score_id=score.id) }}"
+                               class="btn btn-outline-primary" target="_blank"
+                               title="{{ t('view_btn') }}">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            {% if current_user.is_authenticated %}
+                            <form method="POST" action="{{ url_for('delete_score', score_id=score.id) }}"
+                                  onsubmit="return confirm({{ t('confirm_delete')|tojson }});"
+                                  class="d-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-outline-danger btn-sm" title="{{ t('delete_btn') }}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
     {% else %}
     <div class="text-center py-5">
         <i class="bi bi-music-note-list display-1 text-muted"></i>
