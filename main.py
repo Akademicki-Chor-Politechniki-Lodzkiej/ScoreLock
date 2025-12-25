@@ -168,19 +168,34 @@ def library():
     if len(q) > max_q_len:
         q = q[:max_q_len]
 
+    # Pagination parameters
+    page_raw = request.args.get('page', 1)
+    try:
+        page = int(page_raw)
+    except Exception:
+        page = 1
+    if page < 1:
+        page = 1
+
+    per_page = 12  # number of items per page
+
     if q == '':
-        scores = Score.query.order_by(Score.uploaded_at.desc()).all()
+        query = Score.query.order_by(Score.uploaded_at.desc())
     else:
         # Escape SQL LIKE wildcards so user input is treated literally.
         # Replace backslash first to avoid double-escaping.
         q_escaped = q.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
         like_pattern = f"%{q_escaped}%"
         # Pass escape='\\' so the DB knows how to interpret backslash escapes.
-        scores = Score.query.filter(
+        query = Score.query.filter(
             (Score.title.ilike(like_pattern, escape='\\')) | (Score.composer.ilike(like_pattern, escape='\\'))
-        ).order_by(Score.uploaded_at.desc()).all()
+        ).order_by(Score.uploaded_at.desc())
 
-    return render_template('library.html', scores=scores, q=q)
+    # Use SQLAlchemy pagination to avoid loading all results into memory
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    scores = pagination.items
+
+    return render_template('library.html', scores=scores, q=q, pagination=pagination)
 
 @app.route('/scores/<int:score_id>')
 def view_score(score_id):
