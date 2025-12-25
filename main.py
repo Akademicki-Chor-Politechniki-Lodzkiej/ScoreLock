@@ -171,10 +171,13 @@ def library():
     if q == '':
         scores = Score.query.order_by(Score.uploaded_at.desc()).all()
     else:
-        # Use parameterized filters to avoid injection; perform case-insensitive LIKE
-        like_pattern = f"%{q}%"
+        # Escape SQL LIKE wildcards so user input is treated literally.
+        # Replace backslash first to avoid double-escaping.
+        q_escaped = q.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+        like_pattern = f"%{q_escaped}%"
+        # Pass escape='\\' so the DB knows how to interpret backslash escapes.
         scores = Score.query.filter(
-            (Score.title.ilike(like_pattern)) | (Score.composer.ilike(like_pattern))
+            (Score.title.ilike(like_pattern, escape='\\')) | (Score.composer.ilike(like_pattern, escape='\\'))
         ).order_by(Score.uploaded_at.desc()).all()
 
     return render_template('library.html', scores=scores, q=q)
