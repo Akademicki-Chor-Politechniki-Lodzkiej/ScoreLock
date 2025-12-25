@@ -38,6 +38,24 @@
         </div>
     </div>
 
+    <!-- View toggle -->
+    <div class="row mb-3">
+        <div class="col-12 d-flex justify-content-end">
+            <div class="btn-group btn-group-sm" role="group" aria-label="View type">
+                <a href="{% if q %}{{ url_for('library', q=q, view='tiles', page=pagination.page if pagination else 1) }}{% else %}{{ url_for('library', view='tiles', page=pagination.page if pagination else 1) }}{% endif %}"
+                   class="btn {% if view == 'tiles' %}btn-primary{% else %}btn-outline-primary{% endif %}"
+                   aria-label="{{ t('view_tiles') }}">
+                    <i class="bi bi-grid-3x3-gap"></i> {{ t('view_tiles') }}
+                </a>
+                <a href="{% if q %}{{ url_for('library', q=q, view='list', page=pagination.page if pagination else 1) }}{% else %}{{ url_for('library', view='list', page=pagination.page if pagination else 1) }}{% endif %}"
+                   class="btn {% if view == 'list' %}btn-primary{% else %}btn-outline-primary{% endif %}"
+                   aria-label="{{ t('view_list') }}">
+                    <i class="bi bi-list-ul"></i> {{ t('view_list') }}
+                </a>
+            </div>
+        </div>
+    </div>
+
     {% if scores %}
 
     {% if view == 'tiles' %}
