@@ -160,8 +160,26 @@ def library():
     if not is_authorized():
         flash('Please login to access the library.', 'warning')
         return redirect(url_for('login'))
-    scores = Score.query.order_by(Score.uploaded_at.desc()).all()
-    return render_template('library.html', scores=scores)
+    # Support simple search via ?q=term (searches title and composer, case-insensitive)
+    q = request.args.get('q', '')
+    # Sanitize and limit length to avoid abuse
+    if q is None:
+        q = ''
+    q = q.strip()
+    max_q_len = 200
+    if len(q) > max_q_len:
+        q = q[:max_q_len]
+
+    if q == '':
+        scores = Score.query.order_by(Score.uploaded_at.desc()).all()
+    else:
+        # Use parameterized filters to avoid injection; perform case-insensitive LIKE
+        like_pattern = f"%{q}%"
+        scores = Score.query.filter(
+            (Score.title.ilike(like_pattern)) | (Score.composer.ilike(like_pattern))
+        ).order_by(Score.uploaded_at.desc()).all()
+
+    return render_template('library.html', scores=scores, q=q)
 
 @app.route('/scores/<int:score_id>')
 def view_score(score_id):
