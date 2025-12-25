@@ -13,38 +13,50 @@
         </div>
     </div>
 
-    <!-- Search form -->
+    <!-- Search form and controls -->
     <div class="row mb-3">
-        <div class="col-md-8">
+        <div class="col-lg-6 mb-2 mb-lg-0">
             <form class="d-flex" method="get" action="{{ url_for('library') }}" role="search" aria-label="Library search">
                 <input name="q" class="form-control me-2" type="search" placeholder="{{ t('search_placeholder') }}" value="{{ q|default('') }}" aria-label="Search" maxlength="200">
+                <input type="hidden" name="view" value="{{ view }}">
+                <input type="hidden" name="sort" value="{{ sort }}">
                 <button class="btn btn-outline-primary" type="submit"><i class="bi bi-search"></i> {{ t('search_btn') }}</button>
                 {% if q %}
-                <a href="{{ url_for('library') }}" class="btn btn-link ms-2">{{ t('clear') }}</a>
+                <a href="{% if sort != 'date_desc' %}{{ url_for('library', view=view, sort=sort) }}{% else %}{{ url_for('library', view=view) }}{% endif %}" class="btn btn-link ms-2">{{ t('clear') }}</a>
                 {% endif %}
             </form>
         </div>
-        <div class="col-md-4 text-md-end align-self-center">
-            {% if q %}
-            <small class="text-muted">{{ t('showing_results_for') }} "{{ q }}"</small>
-            {% endif %}
+        <div class="col-lg-3 mb-2 mb-lg-0">
+            <form method="get" action="{{ url_for('library') }}" class="d-flex align-items-center">
+                <label class="me-2 text-nowrap small text-muted"><i class="bi bi-sort-down"></i> {{ t('sort_by') }}:</label>
+                <input type="hidden" name="q" value="{{ q }}">
+                <input type="hidden" name="view" value="{{ view }}">
+                <select name="sort" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="date_desc" {% if sort == 'date_desc' %}selected{% endif %}>{{ t('sort_date_newest') }}</option>
+                    <option value="date_asc" {% if sort == 'date_asc' %}selected{% endif %}>{{ t('sort_date_oldest') }}</option>
+                    <option value="title_asc" {% if sort == 'title_asc' %}selected{% endif %}>{{ t('sort_title_az') }}</option>
+                    <option value="title_desc" {% if sort == 'title_desc' %}selected{% endif %}>{{ t('sort_title_za') }}</option>
+                    <option value="composer_asc" {% if sort == 'composer_asc' %}selected{% endif %}>{{ t('sort_composer_az') }}</option>
+                </select>
+            </form>
         </div>
-    </div>
-
-    <!-- View toggle -->
-    <div class="row mb-3">
-        <div class="col-12 d-flex justify-content-end">
-            <div class="btn-group btn-group-sm" role="group" aria-label="View type">
-                <a href="{% if q %}{{ url_for('library', q=q, view='tiles', page=pagination.page if pagination else 1) }}{% else %}{{ url_for('library', view='tiles', page=pagination.page if pagination else 1) }}{% endif %}"
-                   class="btn {% if view == 'tiles' %}btn-primary{% else %}btn-outline-primary{% endif %}"
-                   aria-label="{{ t('view_tiles') }}">
-                    <i class="bi bi-grid-3x3-gap"></i> {{ t('view_tiles') }}
-                </a>
-                <a href="{% if q %}{{ url_for('library', q=q, view='list', page=pagination.page if pagination else 1) }}{% else %}{{ url_for('library', view='list', page=pagination.page if pagination else 1) }}{% endif %}"
-                   class="btn {% if view == 'list' %}btn-primary{% else %}btn-outline-primary{% endif %}"
-                   aria-label="{{ t('view_list') }}">
-                    <i class="bi bi-list-ul"></i> {{ t('view_list') }}
-                </a>
+        <div class="col-lg-3 text-lg-end">
+            <div class="d-flex justify-content-lg-end align-items-center">
+                {% if q %}
+                <small class="text-muted me-3">{{ t('showing_results_for') }} "{{ q }}"</small>
+                {% endif %}
+                <div class="btn-group btn-group-sm" role="group" aria-label="View type">
+                    <a href="{% if q %}{{ url_for('library', q=q, view='tiles', sort=sort, page=pagination.page if pagination else 1) }}{% else %}{{ url_for('library', view='tiles', sort=sort, page=pagination.page if pagination else 1) }}{% endif %}"
+                       class="btn {% if view == 'tiles' %}btn-primary{% else %}btn-outline-primary{% endif %}"
+                       aria-label="{{ t('view_tiles') }}">
+                        <i class="bi bi-grid-3x3-gap"></i>
+                    </a>
+                    <a href="{% if q %}{{ url_for('library', q=q, view='list', sort=sort, page=pagination.page if pagination else 1) }}{% else %}{{ url_for('library', view='list', sort=sort, page=pagination.page if pagination else 1) }}{% endif %}"
+                       class="btn {% if view == 'list' %}btn-primary{% else %}btn-outline-primary{% endif %}"
+                       aria-label="{{ t('view_list') }}">
+                        <i class="bi bi-list-ul"></i>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -54,7 +66,17 @@
     {% if view == 'tiles' %}
     <!-- Tiles View -->
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% set last_letter = '' %}
         {% for score in scores %}
+        {% set first_letter = score.title[0]|upper if score.title else '#' %}
+        {% if first_letter != last_letter %}
+        {% set last_letter = first_letter %}
+        <div class="col-12">
+            <div class="alphabet-header">
+                <div class="alphabet-letter">{{ first_letter }}</div>
+            </div>
+        </div>
+        {% endif %}
         <div class="col">
             <div class="card h-100 shadow-sm hover-card">
                 <div class="card-body">
@@ -163,7 +185,7 @@
         <ul class="pagination justify-content-center">
             {% if pagination.has_prev %}
             <li class="page-item">
-                <a class="page-link" href="{% if q %}{{ url_for('library', q=q, view=view, page=pagination.prev_num) }}{% else %}{{ url_for('library', view=view, page=pagination.prev_num) }}{% endif %}" aria-label="Previous">
+                <a class="page-link" href="{% if q %}{{ url_for('library', q=q, view=view, sort=sort, page=pagination.prev_num) }}{% else %}{{ url_for('library', view=view, sort=sort, page=pagination.prev_num) }}{% endif %}" aria-label="Previous">
                     <span aria-hidden="true">&laquo;</span>
                 </a>
             </li>
@@ -178,7 +200,7 @@
             {% if pagination.page == 1 %}
             <li class="page-item active"><span class="page-link" aria-current="page">1</span></li>
             {% else %}
-            <li class="page-item"><a class="page-link" href="{% if q %}{{ url_for('library', q=q, view=view, page=1) }}{% else %}{{ url_for('library', view=view, page=1) }}{% endif %}">1</a></li>
+            <li class="page-item"><a class="page-link" href="{% if q %}{{ url_for('library', q=q, view=view, sort=sort, page=1) }}{% else %}{{ url_for('library', view=view, sort=sort, page=1) }}{% endif %}">1</a></li>
             {% endif %}
              {% if start > 2 %}
              <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
@@ -189,7 +211,7 @@
             {% if p == pagination.page %}
             <li class="page-item active"><span class="page-link" aria-current="page">{{ p }}</span></li>
             {% else %}
-            <li class="page-item"><a class="page-link" href="{% if q %}{{ url_for('library', q=q, view=view, page=p) }}{% else %}{{ url_for('library', view=view, page=p) }}{% endif %}">{{ p }}</a></li>
+            <li class="page-item"><a class="page-link" href="{% if q %}{{ url_for('library', q=q, view=view, sort=sort, page=p) }}{% else %}{{ url_for('library', view=view, sort=sort, page=p) }}{% endif %}">{{ p }}</a></li>
             {% endif %}
             {% endfor %}
 
@@ -200,13 +222,13 @@
             {% if pagination.page == pagination.pages %}
             <li class="page-item active"><span class="page-link" aria-current="page">{{ pagination.pages }}</span></li>
             {% else %}
-            <li class="page-item"><a class="page-link" href="{% if q %}{{ url_for('library', q=q, view=view, page=pagination.pages) }}{% else %}{{ url_for('library', view=view, page=pagination.pages) }}{% endif %}">{{ pagination.pages }}</a></li>
+            <li class="page-item"><a class="page-link" href="{% if q %}{{ url_for('library', q=q, view=view, sort=sort, page=pagination.pages) }}{% else %}{{ url_for('library', view=view, sort=sort, page=pagination.pages) }}{% endif %}">{{ pagination.pages }}</a></li>
             {% endif %}
             {% endif %}
 
             {% if pagination.has_next %}
             <li class="page-item">
-                <a class="page-link" href="{% if q %}{{ url_for('library', q=q, view=view, page=pagination.next_num) }}{% else %}{{ url_for('library', view=view, page=pagination.next_num) }}{% endif %}" aria-label="Next">
+                <a class="page-link" href="{% if q %}{{ url_for('library', q=q, view=view, sort=sort, page=pagination.next_num) }}{% else %}{{ url_for('library', view=view, sort=sort, page=pagination.next_num) }}{% endif %}" aria-label="Next">
                     <span aria-hidden="true">&raquo;</span>
                 </a>
             </li>

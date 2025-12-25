@@ -175,6 +175,12 @@ def library():
     if view not in ['tiles', 'list']:
         view = 'tiles'
 
+    # Sorting parameter
+    sort = request.args.get('sort', 'date_desc')
+    valid_sorts = ['date_desc', 'date_asc', 'title_asc', 'title_desc', 'composer_asc']
+    if sort not in valid_sorts:
+        sort = 'date_desc'
+
     # Pagination parameters
     page_raw = request.args.get('page', 1)
     try:
@@ -186,8 +192,9 @@ def library():
 
     per_page = ITEMS_PER_PAGE  # number of items per page
 
+    # Build base query
     if not q:
-        query = Score.query.order_by(Score.uploaded_at.desc())
+        query = Score.query
     else:
         # Escape SQL LIKE wildcards so user input is treated literally.
         # Replace backslash first to avoid double-escaping.
@@ -196,13 +203,25 @@ def library():
         # Pass escape='\\' so the DB knows how to interpret backslash escapes.
         query = Score.query.filter(
             (Score.title.ilike(like_pattern, escape='\\')) | (Score.composer.ilike(like_pattern, escape='\\'))
-        ).order_by(Score.uploaded_at.desc())
+        )
+
+    # Apply sorting
+    if sort == 'date_desc':
+        query = query.order_by(Score.uploaded_at.desc())
+    elif sort == 'date_asc':
+        query = query.order_by(Score.uploaded_at.asc())
+    elif sort == 'title_asc':
+        query = query.order_by(Score.title.asc())
+    elif sort == 'title_desc':
+        query = query.order_by(Score.title.desc())
+    elif sort == 'composer_asc':
+        query = query.order_by(Score.composer.asc(), Score.title.asc())
 
     # Use SQLAlchemy pagination to avoid loading all results into memory
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     scores = pagination.items
 
-    return render_template('library.html', scores=scores, q=q, pagination=pagination, view=view)
+    return render_template('library.html', scores=scores, q=q, pagination=pagination, view=view, sort=sort)
 
 @app.route('/scores/<int:score_id>')
 def view_score(score_id):

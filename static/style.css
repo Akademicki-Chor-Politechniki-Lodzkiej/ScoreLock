@@ -347,3 +347,24 @@ code {
     margin: 0;
     opacity: 0.95;
 }
+
+/* Alphabetical Section Headers */
+.alphabet-header {
+    display: flex;
+    align-items: center;
+    margin: 2rem 0 1rem 0;
+}
+
+.alphabet-letter {
+    font-size: 3.5rem;
+    font-weight: 800;
+    color: #667eea;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+    letter-spacing: 2px;
+}
+
+
