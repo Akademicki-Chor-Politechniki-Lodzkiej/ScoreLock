@@ -20,6 +20,24 @@
         </div>
     </div>
 
+    <!-- Search form -->
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <form class="d-flex" method="get" action="{{ url_for('library') }}" role="search" aria-label="Library search">
+                <input name="q" class="form-control me-2" type="search" placeholder="{{ t('search_placeholder') }}" value="{{ q|default('') }}" aria-label="Search">
+                <button class="btn btn-outline-primary" type="submit"><i class="bi bi-search"></i> {{ t('search_btn') }}</button>
+                {% if q %}
+                <a href="{{ url_for('library') }}" class="btn btn-link ms-2">{{ t('clear') }}</a>
+                {% endif %}
+            </form>
+        </div>
+        <div class="col-md-4 text-md-end align-self-center">
+            {% if q %}
+            <small class="text-muted">{{ t('showing_results_for') }} "{{ q }}"</small>
+            {% endif %}
+        </div>
+    </div>
+
     {% if scores %}
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
         {% for score in scores %}
