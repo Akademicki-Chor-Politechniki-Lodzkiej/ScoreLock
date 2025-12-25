@@ -164,9 +164,9 @@ def library():
     q = request.args.get('q', '')
     # Sanitize and limit length to avoid abuse
     q = q.strip()
-    max_q_len = 200
-    if len(q) > max_q_len:
-        q = q[:max_q_len]
+    max_query_length = 200
+    if len(q) > max_query_length:
+        q = q[:max_query_length]
 
     # Pagination parameters
     page_raw = request.args.get('page', 1)
