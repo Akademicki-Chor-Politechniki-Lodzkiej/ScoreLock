@@ -11,6 +11,8 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from urllib.parse import urlparse, urljoin
 
+ITEMS_PER_PAGE = 12
+
 # Load environment variables
 load_dotenv()
 
@@ -177,7 +179,7 @@ def library():
     if page < 1:
         page = 1
 
-    per_page = 12  # number of items per page
+    per_page = ITEMS_PER_PAGE  # number of items per page
 
     if q == '':
         query = Score.query.order_by(Score.uploaded_at.desc())
