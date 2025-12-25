@@ -11,6 +11,8 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from urllib.parse import urlparse, urljoin
 
+ITEMS_PER_PAGE = 12
+
 # Load environment variables
 load_dotenv()
 
@@ -160,8 +162,42 @@ def library():
     if not is_authorized():
         flash('Please login to access the library.', 'warning')
         return redirect(url_for('login'))
-    scores = Score.query.order_by(Score.uploaded_at.desc()).all()
-    return render_template('library.html', scores=scores)
+    # Support simple search via ?q=term (searches title and composer, case-insensitive)
+    q = request.args.get('q', '')
+    # Sanitize and limit length to avoid abuse
+    q = q.strip()
+    max_query_length = 200
+    if len(q) > max_query_length:
+        q = q[:max_query_length]
+
+    # Pagination parameters
+    page_raw = request.args.get('page', 1)
+    try:
+        page = int(page_raw)
+    except (TypeError, ValueError):
+        page = 1
+    if page < 1:
+        page = 1
+
+    per_page = ITEMS_PER_PAGE  # number of items per page
+
+    if not q:
+        query = Score.query.order_by(Score.uploaded_at.desc())
+    else:
+        # Escape SQL LIKE wildcards so user input is treated literally.
+        # Replace backslash first to avoid double-escaping.
+        q_escaped = q.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+        like_pattern = f"%{q_escaped}%"
+        # Pass escape='\\' so the DB knows how to interpret backslash escapes.
+        query = Score.query.filter(
+            (Score.title.ilike(like_pattern, escape='\\')) | (Score.composer.ilike(like_pattern, escape='\\'))
+        ).order_by(Score.uploaded_at.desc())
+
+    # Use SQLAlchemy pagination to avoid loading all results into memory
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    scores = pagination.items
+
+    return render_template('library.html', scores=scores, q=q, pagination=pagination)
 
 @app.route('/scores/<int:score_id>')
 def view_score(score_id):

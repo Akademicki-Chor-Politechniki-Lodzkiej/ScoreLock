@@ -36,6 +36,10 @@ translations = {
         'confirm_delete': 'Are you sure?',
         'check_back_later' : 'Check back later for new content',
         'library_subtitle' : 'Browse and access sheet music',
+        'search_placeholder': 'Search by title or composer',
+        'search_btn': 'Search',
+        'clear': 'Clear',
+        'showing_results_for': 'Showing results for',
         'footer_credit': 'Created with ❤️ by AChPŁ IT Department'
     },
     'pl': {
@@ -72,6 +76,10 @@ translations = {
         'confirm_delete': 'Czy na pewno?',
         'check_back_later' : 'Sprawdź ponownie później, aby zobaczyć nową zawartość',
         'library_subtitle' : 'Przeglądaj i uzyskuj dostęp do nut',
+        'search_placeholder': 'Szukaj według tytułu lub kompozytora',
+        'search_btn': 'Szukaj',
+        'clear': 'Wyczyść',
+        'showing_results_for': 'Wyniki wyszukiwania dla',
         'footer_credit': 'Stworzone z ❤️ przez dział IT AChPŁ'
     }
 }
