@@ -528,6 +528,69 @@ def bulk_upload_step1():
 
     return render_template('bulk_upload_step1.html')
 
+@app.route('/admin/bulk-upload-step2', methods=['GET', 'POST'])
+@login_required
+def bulk_upload_step2():
+    temp_files = session.get('bulk_upload_files')
+
+    if not temp_files:
+        flash('No files in bulk upload session. Please start over.', 'warning')
+        return redirect(url_for('admin_dashboard'))
+
+    if request.method == 'POST':
+        # Process the form with all file details
+        success_count = 0
+        error_count = 0
+
+        for i, file_info in enumerate(temp_files):
+            title = request.form.get(f'title_{i}', '').strip()
+            composer = request.form.get(f'composer_{i}', '').strip()
+
+            if not title:
+                flash(f'Skipped file {file_info["original_filename"]}: Title is required.', 'warning')
+                error_count += 1
+                continue
+
+            if len(title) > 200:
+                flash(f'Skipped file {file_info["original_filename"]}: Title is too long.', 'warning')
+                error_count += 1
+                continue
+
+            if len(composer) > 200:
+                flash(f'Skipped file {file_info["original_filename"]}: Composer name is too long.', 'warning')
+                error_count += 1
+                continue
+
+            # Create score record
+            score = Score(
+                title=title,
+                composer=composer if composer else None,
+                filename=file_info['filename'],
+                uploaded_by=current_user.id
+            )
+
+            try:
+                db.session.add(score)
+                db.session.commit()
+                success_count += 1
+            except Exception as e:
+                db.session.rollback()
+                app.logger.exception('Failed to save score: %s', e)
+                flash(f'Failed to save {file_info["original_filename"]}.', 'danger')
+                error_count += 1
+
+        # Clear session
+        session.pop('bulk_upload_files', None)
+
+        if success_count > 0:
+            flash(f'Successfully uploaded {success_count} score(s)!', 'success')
+        if error_count > 0:
+            flash(f'Failed to upload {error_count} score(s).', 'danger')
+
+        return redirect(url_for('admin_dashboard'))
+
+    return render_template('bulk_upload_step2.html', files=temp_files)
+
 @app.route('/admin/delete-score/<int:score_id>', methods=['POST'])
 @login_required
 def delete_score(score_id):
