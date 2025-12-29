@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('bulk_upload_step2_title') }} - {{ t('brand') }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('admin_dashboard') }}">{{ t('nav_admin') }}</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('bulk_upload_step1') }}">{{ t('bulk_upload_step1_title') }}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ t('bulk_upload_step2_title') }}</li>
+                </ol>
+            </nav>
+            <h1 class="display-4">
+                <i class="bi bi-pencil-square"></i> {{ t('bulk_upload_step2_title') }}
+            </h1>
+            <p class="lead text-muted">Edit details for {{ files|length }} file(s)</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-ul"></i> {{ t('all_scores_title') }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('bulk_upload_step2') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 5%;">#</th>
+                                        <th style="width: 30%;">{{ t('filename_label') }}</th>
+                                        <th style="width: 32.5%;">{{ t('title_label') }} <span class="text-danger">*</span></th>
+                                        <th style="width: 32.5%;">{{ t('composer_label') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for file in files %}
+                                    <tr>
+                                        <td class="align-middle text-center">{{ loop.index }}</td>
+                                        <td class="align-middle">
+                                            <small class="text-muted">{{ file.original_filename }}</small>
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control"
+                                                   name="title_{{ loop.index0 }}"
+                                                   value="{{ file.title }}"
+                                                   required
+                                                   maxlength="200">
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control"
+                                                   name="composer_{{ loop.index0 }}"
+                                                   value=""
+                                                   maxlength="200">
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="alert alert-info mt-3">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Note:</strong> Title is required for each score. Composer is optional.
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-3">
+                            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">
+                                <i class="bi bi-x"></i> {{ t('cancel_btn') }}
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i> {{ t('bulk_upload_submit_btn') }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
