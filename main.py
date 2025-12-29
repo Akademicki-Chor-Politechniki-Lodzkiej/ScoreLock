@@ -1,4 +1,5 @@
 import os
+from io import BytesIO
 from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory, session
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
@@ -315,7 +316,6 @@ def upload_score():
         return redirect(url_for('admin_dashboard'))
 
     # Read file bytes (safe because MAX_CONTENT_LENGTH limits size)
-    from io import BytesIO
     data = file.read()
 
     # Basic PDF magic header check
