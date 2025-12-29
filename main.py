@@ -407,6 +407,127 @@ def upload_score():
     flash('Score uploaded successfully!', 'success')
     return redirect(url_for('admin_dashboard'))
 
+@app.route('/admin/bulk-upload', methods=['GET', 'POST'])
+@login_required
+def bulk_upload_step1():
+    if request.method == 'POST':
+        # Handle multiple file uploads
+        if 'files' not in request.files:
+            flash('No files provided.', 'danger')
+            return redirect(url_for('admin_dashboard'))
+
+        files = request.files.getlist('files')
+
+        if not files or all(f.filename == '' for f in files):
+            flash('No files selected.', 'danger')
+            return redirect(url_for('admin_dashboard'))
+
+        # Validate and temporarily store files
+        temp_files = []
+        for file in files:
+            if file.filename == '':
+                continue
+
+            # Quick filename extension check
+            if not file.filename.lower().endswith('.pdf'):
+                flash(f'File {file.filename} is not a PDF. Skipped.', 'warning')
+                continue
+
+            # Read file bytes
+            data = file.read()
+
+            # Basic PDF magic header check
+            if not data.startswith(b'%PDF'):
+                flash(f'File {file.filename} is not a valid PDF (invalid header). Skipped.', 'warning')
+                continue
+
+            # Try to parse the PDF
+            try:
+                try:
+                    from PyPDF2 import PdfReader
+                except ModuleNotFoundError:
+                    app.logger.exception('PyPDF2 library is not installed; cannot validate PDFs')
+                    flash('Server misconfiguration: PDF validation library not available.', 'danger')
+                    return redirect(url_for('admin_dashboard'))
+
+                reader = PdfReader(BytesIO(data))
+                if len(getattr(reader, 'pages', [])) == 0:
+                    raise ValueError('PDF has no pages')
+            except Exception as e:
+                app.logger.exception('File %s failed PDF validation: %s', file.filename, e)
+                flash(f'File {file.filename} is not a valid PDF. Skipped.', 'warning')
+                continue
+
+            # Generate safe filename
+            original_filename = file.filename
+            filename = secure_filename(original_filename)
+
+            if not filename:
+                ext = '.pdf' if original_filename.lower().endswith('.pdf') else ''
+                filename = f"{uuid4().hex}{ext}"
+
+            filename = filename.replace(os.path.sep, '_').replace('/', '_')
+            filename = filename.lstrip('.')
+
+            # Add timestamp prefix
+            base, ext = os.path.splitext(filename)
+            timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S_')
+            max_total_len = 200
+            max_base_len = max_total_len - len(ext) - len(timestamp)
+
+            if max_base_len < 0:
+                filename = f"{timestamp}{uuid4().hex}{ext}"
+            else:
+                if len(base) > max_base_len:
+                    base = base[:max_base_len]
+                filename = timestamp + base + ext
+
+            # Save file temporarily
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+            upload_folder_abs = os.path.abspath(app.config['UPLOAD_FOLDER'])
+            filepath_abs = os.path.abspath(filepath)
+
+            try:
+                if os.path.commonpath([upload_folder_abs, filepath_abs]) != upload_folder_abs:
+                    app.logger.error('Detected attempted path traversal in upload: %s', filepath_abs)
+                    flash(f'Invalid upload path for {original_filename}.', 'danger')
+                    continue
+            except Exception as e:
+                app.logger.exception('Error validating upload path: %s', e)
+                flash(f'Invalid upload path for {original_filename}.', 'danger')
+                continue
+
+            try:
+                with open(filepath, 'wb') as f:
+                    f.write(data)
+            except Exception as e:
+                app.logger.exception('Failed to save uploaded file: %s', e)
+                flash(f'Failed to save {original_filename}.', 'danger')
+                continue
+
+            # Extract title from filename (without extension and timestamp)
+            # Remove timestamp prefix pattern (YYYYMMDD_HHMMSS_)
+            display_name = base
+            if len(display_name) > 17 and display_name[8] == '_' and display_name[15] == '_':
+                display_name = display_name[16:]  # Remove timestamp prefix
+
+            temp_files.append({
+                'filename': filename,
+                'original_filename': original_filename,
+                'title': display_name
+            })
+
+        if not temp_files:
+            flash('No valid PDF files were uploaded.', 'danger')
+            return redirect(url_for('admin_dashboard'))
+
+        # Store in session for step 2
+        session['bulk_upload_files'] = temp_files
+        return redirect(url_for('bulk_upload_step2'))
+
+    return render_template('bulk_upload_step1.html')
+
 @app.route('/admin/delete-score/<int:score_id>', methods=['POST'])
 @login_required
 def delete_score(score_id):
