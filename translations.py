@@ -115,7 +115,16 @@ translations = {
         'sort_title_az': 'Tytuł (A-Z)',
         'sort_title_za': 'Tytuł (Z-A)',
         'sort_composer_az': 'Kompozytor (A-Z)',
-        'footer_credit': 'Stworzone z ❤️ przez dział IT AChPŁ'
+        'footer_credit': 'Stworzone z ❤️ przez dział IT AChPŁ',
+        'bulk_upload_title': 'Masowe przesyłanie',
+        'bulk_upload_btn': 'Masowe przesyłanie',
+        'bulk_upload_files_label': 'Wybierz pliki PDF',
+        'bulk_upload_continue_btn': 'Kontynuuj do edycji szczegółów',
+        'bulk_upload_step1_title': 'Krok 1: Wybierz pliki',
+        'bulk_upload_step2_title': 'Krok 2: Edytuj szczegóły',
+        'bulk_upload_submit_btn': 'Prześlij wszystkie partytury',
+        'bulk_upload_back_btn': 'Powrót do przesyłania',
+        'filename_label': 'Nazwa pliku'
     }
 }
 
