@@ -510,7 +510,7 @@ def change_password():
 @limiter.limit("10 per hour")
 def create_user():
     username = request.form.get('username', '').strip()
-    password = request.form.get('password', '').strip()
+    password = request.form.get('password', '')
 
     # Validate inputs
     if not username:
