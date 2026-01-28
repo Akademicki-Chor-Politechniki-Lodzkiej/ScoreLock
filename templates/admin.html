@@ -165,6 +165,83 @@
             </div>
         </div>
     </div>
+
+    <div class="row g-4">
+        <!-- Site Settings -->
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-palette"></i> {{ t('site_settings_title') }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('update_site_settings') }}" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="site_name" class="form-label">{{ t('site_name_label') }}</label>
+                                <input type="text" class="form-control" id="site_name" name="site_name"
+                                       value="{{ settings.site_name if settings else 'ScoreLock' }}"
+                                       placeholder="ScoreLock">
+                                <div class="form-text">{{ t('site_name_help') }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="logo" class="form-label">{{ t('logo_label') }}</label>
+                                <input type="file" class="form-control" id="logo" name="logo"
+                                       accept=".png,.jpg,.jpeg,.gif,.svg,.webp">
+                                <div class="form-text">{{ t('logo_help') }}</div>
+                                {% if settings and settings.logo_filename %}
+                                <div class="mt-2">
+                                    <img src="{{ url_for('static', filename=settings.logo_filename) }}"
+                                         alt="Current Logo" style="max-height: 50px; max-width: 200px; object-fit: contain;">
+                                    <small class="text-muted d-block">{{ t('current_logo_label') }}</small>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label for="favicon" class="form-label">{{ t('favicon_label') }}</label>
+                                <input type="file" class="form-control" id="favicon" name="favicon"
+                                       accept=".ico,.png,.svg">
+                                <div class="form-text">{{ t('favicon_help') }}</div>
+                                {% if settings and settings.favicon_filename %}
+                                <div class="mt-2">
+                                    <img src="{{ url_for('static', filename=settings.favicon_filename) }}"
+                                         alt="Current Favicon" style="max-height: 32px; max-width: 32px;">
+                                    <small class="text-muted d-block">{{ t('current_favicon_label') }}</small>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <button type="submit" class="btn btn-info text-white">
+                                <i class="bi bi-check-circle"></i> {{ t('save_settings_btn') }}
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Clear Settings Form -->
+                    {% if settings and (settings.logo_filename or settings.favicon_filename or settings.site_name != 'ScoreLock') %}
+                    <hr class="my-4">
+                    <div class="alert alert-warning d-flex align-items-center" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <div>
+                            <strong>{{ t('reset_settings_title') }}</strong><br>
+                            <small>{{ t('reset_settings_help') }}</small>
+                        </div>
+                    </div>
+                    <form method="POST" action="{{ url_for('clear_site_settings') }}"
+                          onsubmit="return confirm('{{ t('confirm_reset_settings') }}');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-outline-danger">
+                            <i class="bi bi-arrow-counterclockwise"></i> {{ t('reset_settings_btn') }}
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Edit Score Modals -->
