@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ t('login_title') }}{% endblock %}
+{% block title %}{{ t('login_page_title') }} - {{ site_settings.site_name if site_settings else t('brand') }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid p-0">
