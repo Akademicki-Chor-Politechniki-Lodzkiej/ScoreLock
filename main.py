@@ -385,6 +385,16 @@ def view_score(score_id):
     if not is_authorized():
         flash('Please login to access the score.', 'warning')
         return redirect(url_for('login'))
+
+    # Check if OTP user has accepted all policies
+    if session.get('otp_authenticated'):
+        session_id = session.get('policy_session_id')
+        if session_id:
+            pending_policies = PolicyAcceptance.get_pending_policies_for_session(session_id)
+            if pending_policies:
+                flash('You must accept all policies to access scores.', 'warning')
+                return redirect(url_for('policy_acceptance'))
+
     score = Score.query.get_or_404(score_id)
     return send_from_directory(app.config['UPLOAD_FOLDER'], score.filename)
 
