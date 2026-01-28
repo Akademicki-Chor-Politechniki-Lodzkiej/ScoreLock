@@ -466,6 +466,7 @@ def deactivate_otp(otp_id):
 
 @app.route('/admin/change-password', methods=['POST'])
 @login_required
+@limiter.limit("5 per hour")
 def change_password():
     current_password = request.form.get('current_password', '')
     new_password = request.form.get('new_password', '')
