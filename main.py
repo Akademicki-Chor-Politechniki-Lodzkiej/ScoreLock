@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, sen
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
-from models import db, Admin, OTP, Score
+from models import db, Admin, OTP, Score, SiteSettings
 from datetime import datetime, timedelta
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from uuid import uuid4
@@ -65,6 +65,16 @@ def t(key):
 
 app.jinja_env.globals['t'] = t
 app.jinja_env.globals['available_languages'] = available_languages
+
+@app.context_processor
+def inject_site_settings():
+    """Inject site settings into all templates"""
+    try:
+        settings = SiteSettings.get_settings()
+        return {'site_settings': settings}
+    except Exception:
+        # Return defaults if database isn't initialized yet
+        return {'site_settings': None}
 
 
 def is_safe_url(target):
@@ -251,7 +261,8 @@ def view_score(score_id):
 def admin_dashboard():
     otps = OTP.query.filter_by(created_by=current_user.id).order_by(OTP.created_at.desc()).all()
     scores = Score.query.order_by(Score.uploaded_at.desc()).all()
-    return render_template('admin.html', otps=otps, scores=scores)
+    settings = SiteSettings.get_settings()
+    return render_template('admin.html', otps=otps, scores=scores, settings=settings)
 
 @app.route('/admin/generate-otp', methods=['POST'])
 @login_required
