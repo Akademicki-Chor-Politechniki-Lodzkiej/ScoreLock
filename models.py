@@ -90,3 +90,16 @@ class Policy(db.Model):
         """Get all active policies"""
         return Policy.query.filter_by(is_active=True).order_by(Policy.created_at.asc()).all()
 
+class PolicyAcceptance(db.Model):
+    __tablename__ = 'policy_acceptances'
+
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(255), nullable=False)  # Flask session ID
+    otp_id = db.Column(db.Integer, db.ForeignKey('otps.id'), nullable=False)  # For reference
+    policy_id = db.Column(db.Integer, db.ForeignKey('policies.id'), nullable=False)
+    accepted_at = db.Column(db.DateTime, default=datetime.utcnow)
+    ip_address = db.Column(db.String(45), nullable=True)  # Support IPv6
+
+    otp = db.relationship('OTP', backref='policy_acceptances')
+    policy = db.relationship('Policy', backref='acceptances')
+
