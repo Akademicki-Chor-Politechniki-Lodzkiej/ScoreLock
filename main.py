@@ -30,6 +30,7 @@ if db_url.startswith('sqlite:///') and not db_url.startswith('sqlite:////'):
     if not os.path.isabs(db_filename):
         # Make it relative to the app directory
         db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), db_filename)
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
         db_url = f'sqlite:///{db_path}'
 
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
