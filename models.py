@@ -60,3 +60,14 @@ class SiteSettings(db.Model):
     updated_by = db.Column(db.Integer, db.ForeignKey('admins.id'), nullable=True)
 
     admin = db.relationship('Admin', backref='settings_updates')
+
+    @staticmethod
+    def get_settings():
+        """Get or create the site settings singleton"""
+        settings = SiteSettings.query.first()
+        if not settings:
+            settings = SiteSettings()
+            db.session.add(settings)
+            db.session.commit()
+        return settings
+
