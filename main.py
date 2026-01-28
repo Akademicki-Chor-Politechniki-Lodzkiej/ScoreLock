@@ -964,6 +964,22 @@ def manage_policies():
     policies = Policy.query.order_by(Policy.created_at.desc()).all()
     return render_template('manage_policies.html', policies=policies)
 
+@app.route('/admin/policies/<int:policy_id>/toggle', methods=['POST'])
+@login_required
+def toggle_policy(policy_id):
+    policy = Policy.query.get_or_404(policy_id)
+    policy.is_active = not policy.is_active
+
+    try:
+        db.session.commit()
+        status = 'activated' if policy.is_active else 'deactivated'
+        flash(f'Policy "{policy.name}" {status} successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        app.logger.exception('Failed to toggle policy: %s', e)
+        flash('Failed to update policy status.', 'danger')
+
+    return redirect(url_for('manage_policies'))
 
 @app.route('/admin/policies/<int:policy_id>/delete', methods=['POST'])
 @login_required
