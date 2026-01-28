@@ -797,134 +797,50 @@ def update_site_settings():
     # Handle logo upload
     if 'logo' in request.files:
         logo_file = request.files['logo']
-        if logo_file.filename != '':
-            # Validate file type (images only)
-            allowed_extensions = {'.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'}
-            file_ext = os.path.splitext(logo_file.filename.lower())[1]
+        success, result, data_or_error = validate_and_process_upload(
+            logo_file,
+            allowed_extensions={'.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'},
+            max_size_bytes=2 * 1024 * 1024,  # 2MB
+            file_type_name='Logo',
+            filename_prefix='logo_'
+        )
 
-            if file_ext not in allowed_extensions:
-                flash('Logo must be an image file (PNG, JPG, GIF, SVG, or WebP).', 'danger')
+        if success:
+            # result is the filename, data_or_error is the file data
+            save_success, error_msg = save_uploaded_file(result, data_or_error, settings.logo_filename)
+            if save_success:
+                settings.logo_filename = result
+            else:
+                flash(error_msg, 'danger')
                 return redirect(url_for('admin_dashboard'))
-
-            # Read file data
-            data = logo_file.read()
-
-            # Check file size (max 2MB for images)
-            if len(data) > 2 * 1024 * 1024:
-                flash('Logo file is too large (max 2MB).', 'danger')
-                return redirect(url_for('admin_dashboard'))
-
-            # Generate secure filename
-            filename = secure_filename(logo_file.filename)
-            if not filename:
-                filename = f"{uuid4().hex}{file_ext}"
-
-            filename = filename.replace(os.path.sep, '_').replace('/', '_').lstrip('.')
-            timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S_')
-            filename = f"logo_{timestamp}{filename}"
-
-            # Save to static folder instead of upload folder
-            static_folder = os.path.join(app.root_path, 'static')
-            filepath = os.path.join(static_folder, filename)
-
-            # Validate path
-            static_folder_abs = os.path.abspath(static_folder)
-            filepath_abs = os.path.abspath(filepath)
-
-            try:
-                if os.path.commonpath([static_folder_abs, filepath_abs]) != static_folder_abs:
-                    app.logger.error('Detected attempted path traversal in logo upload: %s', filepath_abs)
-                    flash('Invalid upload path.', 'danger')
-                    return redirect(url_for('admin_dashboard'))
-            except Exception as e:
-                app.logger.exception('Error validating logo upload path: %s', e)
-                flash('Invalid upload path.', 'danger')
-                return redirect(url_for('admin_dashboard'))
-
-            # Delete old logo if exists
-            if settings.logo_filename:
-                old_logo_path = os.path.join(static_folder, settings.logo_filename)
-                try:
-                    if os.path.exists(old_logo_path):
-                        os.remove(old_logo_path)
-                except Exception as e:
-                    app.logger.exception('Failed to remove old logo: %s', e)
-
-            # Save new logo
-            try:
-                with open(filepath, 'wb') as f:
-                    f.write(data)
-                settings.logo_filename = filename
-            except Exception as e:
-                app.logger.exception('Failed to save logo file: %s', e)
-                flash('Failed to save logo file.', 'danger')
-                return redirect(url_for('admin_dashboard'))
+        elif result is not None:
+            # Validation failed, data_or_error contains error message
+            flash(data_or_error, 'danger')
+            return redirect(url_for('admin_dashboard'))
 
     # Handle favicon upload
     if 'favicon' in request.files:
         favicon_file = request.files['favicon']
-        if favicon_file.filename != '':
-            # Validate file type (icons only)
-            allowed_extensions = {'.ico', '.png', '.svg'}
-            file_ext = os.path.splitext(favicon_file.filename.lower())[1]
+        success, result, data_or_error = validate_and_process_upload(
+            favicon_file,
+            allowed_extensions={'.ico', '.png', '.svg'},
+            max_size_bytes=1024 * 1024,  # 1MB
+            file_type_name='Favicon',
+            filename_prefix='favicon_'
+        )
 
-            if file_ext not in allowed_extensions:
-                flash('Favicon must be an icon file (ICO, PNG, or SVG).', 'danger')
+        if success:
+            # result is the filename, data_or_error is the file data
+            save_success, error_msg = save_uploaded_file(result, data_or_error, settings.favicon_filename)
+            if save_success:
+                settings.favicon_filename = result
+            else:
+                flash(error_msg, 'danger')
                 return redirect(url_for('admin_dashboard'))
-
-            # Read file data
-            data = favicon_file.read()
-
-            # Check file size (max 1MB for favicon)
-            if len(data) > 1024 * 1024:
-                flash('Favicon file is too large (max 1MB).', 'danger')
-                return redirect(url_for('admin_dashboard'))
-
-            # Generate secure filename
-            filename = secure_filename(favicon_file.filename)
-            if not filename:
-                filename = f"{uuid4().hex}{file_ext}"
-
-            filename = filename.replace(os.path.sep, '_').replace('/', '_').lstrip('.')
-            timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S_')
-            filename = f"favicon_{timestamp}{filename}"
-
-            # Save to static folder
-            static_folder = os.path.join(app.root_path, 'static')
-            filepath = os.path.join(static_folder, filename)
-
-            # Validate path
-            static_folder_abs = os.path.abspath(static_folder)
-            filepath_abs = os.path.abspath(filepath)
-
-            try:
-                if os.path.commonpath([static_folder_abs, filepath_abs]) != static_folder_abs:
-                    app.logger.error('Detected attempted path traversal in favicon upload: %s', filepath_abs)
-                    flash('Invalid upload path.', 'danger')
-                    return redirect(url_for('admin_dashboard'))
-            except Exception as e:
-                app.logger.exception('Error validating favicon upload path: %s', e)
-                flash('Invalid upload path.', 'danger')
-                return redirect(url_for('admin_dashboard'))
-
-            # Delete old favicon if exists
-            if settings.favicon_filename:
-                old_favicon_path = os.path.join(static_folder, settings.favicon_filename)
-                try:
-                    if os.path.exists(old_favicon_path):
-                        os.remove(old_favicon_path)
-                except Exception as e:
-                    app.logger.exception('Failed to remove old favicon: %s', e)
-
-            # Save new favicon
-            try:
-                with open(filepath, 'wb') as f:
-                    f.write(data)
-                settings.favicon_filename = filename
-            except Exception as e:
-                app.logger.exception('Failed to save favicon file: %s', e)
-                flash('Failed to save favicon file.', 'danger')
-                return redirect(url_for('admin_dashboard'))
+        elif result is not None:
+            # Validation failed, data_or_error contains error message
+            flash(data_or_error, 'danger')
+            return redirect(url_for('admin_dashboard'))
 
     # Update metadata
     settings.updated_by = current_user.id
@@ -946,24 +862,10 @@ def clear_site_settings():
     settings = SiteSettings.get_settings()
 
     # Delete logo file if exists
-    if settings.logo_filename:
-        static_folder = os.path.join(app.root_path, 'static')
-        old_logo_path = os.path.join(static_folder, settings.logo_filename)
-        try:
-            if os.path.exists(old_logo_path):
-                os.remove(old_logo_path)
-        except Exception as e:
-            app.logger.exception('Failed to remove logo file: %s', e)
+    delete_static_file(settings.logo_filename)
 
     # Delete favicon file if exists
-    if settings.favicon_filename:
-        static_folder = os.path.join(app.root_path, 'static')
-        old_favicon_path = os.path.join(static_folder, settings.favicon_filename)
-        try:
-            if os.path.exists(old_favicon_path):
-                os.remove(old_favicon_path)
-        except Exception as e:
-            app.logger.exception('Failed to remove favicon file: %s', e)
+    delete_static_file(settings.favicon_filename)
 
     # Reset to defaults
     settings.site_name = 'ScoreLock'
