@@ -30,8 +30,23 @@ fi
 # Create .env file
 if [ "$create_env" = true ]; then
     echo "Creating .env file with SQLite configuration..."
+
+    # Generate SECRET_KEY using Python; fall back to openssl if necessary
+    SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_hex(32))" 2>/dev/null || true)
+    if [ -z "$SECRET_KEY" ]; then
+        if command -v openssl >/dev/null 2>&1; then
+            SECRET_KEY=$(openssl rand -hex 32 2>/dev/null || true)
+        fi
+    fi
+
+    if [ -z "$SECRET_KEY" ]; then
+        echo "Error: Failed to generate SECRET_KEY."
+        echo "Please ensure Python 3 (with the 'secrets' module) or 'openssl' is installed."
+        exit 1
+    fi
+
     cat > .env << EOF
-SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_hex(32))")
+SECRET_KEY=$SECRET_KEY
 DATABASE_URL=sqlite:///scorelock.db
 UPLOAD_FOLDER=scores
 EOF
