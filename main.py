@@ -416,7 +416,8 @@ def admin_dashboard():
     scores = Score.query.order_by(Score.uploaded_at.desc()).all()
     settings = SiteSettings.get_settings()
     policies = Policy.query.order_by(Policy.created_at.desc()).all()
-    return render_template('admin.html', otps=otps, scores=scores, settings=settings, policies=policies)
+    admin_users = Admin.query.order_by(Admin.created_at.desc()).all()
+    return render_template('admin.html', otps=otps, scores=scores, settings=settings, policies=policies, admin_users=admin_users)
 
 @app.route('/admin/generate-otp', methods=['POST'])
 @login_required
@@ -501,6 +502,54 @@ def change_password():
         db.session.rollback()
         app.logger.exception('Failed to change password: %s', e)
         flash('Failed to change password.', 'danger')
+
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/create-user', methods=['POST'])
+@login_required
+@limiter.limit("10 per hour")
+def create_user():
+    username = request.form.get('username', '').strip()
+    password = request.form.get('password', '').strip()
+
+    # Validate inputs
+    if not username:
+        flash('Username is required.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    if len(username) < 3:
+        flash('Username must be at least 3 characters long.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    if len(username) > 80:
+        flash('Username must be at most 80 characters long.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    if not password:
+        flash('Password is required.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    if len(password) < 8:
+        flash('Password must be at least 8 characters long.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    # Check if username already exists
+    existing_user = Admin.query.filter_by(username=username).first()
+    if existing_user:
+        flash('Username already exists. Please choose a different one.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    # Create new user
+    try:
+        new_admin = Admin(username=username)
+        new_admin.set_password(password)
+        db.session.add(new_admin)
+        db.session.commit()
+        flash(f'User "{username}" created successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        app.logger.exception('Failed to create user: %s', e)
+        flash('Failed to create user.', 'danger')
 
     return redirect(url_for('admin_dashboard'))
 
