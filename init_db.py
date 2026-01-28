@@ -45,6 +45,12 @@ def init_db():
 
         print("\n✓ Database initialization complete!")
         print("\nYou can now run the application with: python main.py")
+        print("\nNext steps:")
+        print("1. Start the application: python main.py")
+        print("2. Log in as admin")
+        print("3. Customize site settings (optional)")
+        print("4. Create policies for OTP users (optional)")
+        print("5. Generate OTP codes for users")
 
 def create_admin():
     """Create a new admin user"""
