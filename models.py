@@ -71,3 +71,17 @@ class SiteSettings(db.Model):
             db.session.commit()
         return settings
 
+class Policy(db.Model):
+    __tablename__ = 'policies'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    short_notice = db.Column(db.Text, nullable=False)
+    full_policy = db.Column(db.Text, nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by = db.Column(db.Integer, db.ForeignKey('admins.id'), nullable=False)
+
+    admin = db.relationship('Admin', backref='created_policies')
+
