@@ -1047,7 +1047,7 @@ def delete_policy(policy_id):
     policy = Policy.query.get_or_404(policy_id)
 
     try:
-        # Delete associated acceptances first
+        # Delete associated acceptances first (for database compatibility; CASCADE is also defined at DB level)
         PolicyAcceptance.query.filter_by(policy_id=policy_id).delete()
         db.session.delete(policy)
         db.session.commit()

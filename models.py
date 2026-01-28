@@ -95,8 +95,8 @@ class PolicyAcceptance(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     session_id = db.Column(db.String(255), nullable=False)  # Flask session ID
-    otp_id = db.Column(db.Integer, db.ForeignKey('otps.id'), nullable=False)  # For reference
-    policy_id = db.Column(db.Integer, db.ForeignKey('policies.id'), nullable=False)
+    otp_id = db.Column(db.Integer, db.ForeignKey('otps.id', ondelete='CASCADE'), nullable=False)  # For reference
+    policy_id = db.Column(db.Integer, db.ForeignKey('policies.id', ondelete='CASCADE'), nullable=False)
     accepted_at = db.Column(db.DateTime, default=datetime.utcnow)
     ip_address = db.Column(db.String(45), nullable=True)  # Support IPv6
 
