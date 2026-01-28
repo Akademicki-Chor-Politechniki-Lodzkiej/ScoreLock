@@ -26,6 +26,17 @@ echo.
 :create_env
 echo Creating .env file with SQLite configuration...
 for /f "usebackq delims=" %%K in (`python -c "import secrets; print(secrets.token_hex(32))"`) do set "SECRET_KEY=%%K"
+REM Validate SECRET_KEY generation
+if "%SECRET_KEY%"=="" (
+    echo.
+    echo Error: Failed to generate SECRET_KEY.
+    echo Ensure Python is installed and that the command
+    echo   python -c "import secrets; print(secrets.token_hex(32))"
+    echo executes successfully from this environment.
+    echo.
+    pause
+    exit /b 1
+)
 (
     echo SECRET_KEY=%SECRET_KEY%
     echo DATABASE_URL=sqlite:///scorelock.db
@@ -33,8 +44,8 @@ for /f "usebackq delims=" %%K in (`python -c "import secrets; print(secrets.toke
 ) > .env
 echo .env file created with SQLite database configuration.
 echo.
-echo NOTE: Please generate a proper SECRET_KEY using:
-echo   python -c "import secrets; print(secrets.token_hex(32))"
+echo NOTE: SECRET_KEY was generated automatically and written to .env.
+echo If you prefer to use your own key, edit .env and set SECRET_KEY to a secure value.
 echo.
 goto :continue
 
