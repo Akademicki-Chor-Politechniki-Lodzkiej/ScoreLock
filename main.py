@@ -431,8 +431,8 @@ def generate_otp():
             flash('Custom OTP code must be at least 6 characters long.', 'danger')
             return redirect(url_for('admin_dashboard'))
 
-        if len(custom_code) > 50:
-            flash('Custom OTP code must be at most 50 characters long.', 'danger')
+        if len(custom_code) > 20:
+            flash('Custom OTP code must be at most 20 characters long.', 'danger')
             return redirect(url_for('admin_dashboard'))
 
         # Check if code already exists
