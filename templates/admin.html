@@ -59,11 +59,16 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <p>{{ t('generate_otp_title') }} {{ t('no_otps') }}</p>
                     <form method="POST" action="{{ url_for('generate_otp') }}">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label for="custom_code" class="form-label">{{ t('custom_otp_label') }}</label>
+                            <input type="text" class="form-control" id="custom_code" name="custom_code"
+                                   placeholder="{{ t('custom_otp_placeholder') }}">
+                            <div class="form-text">{{ t('custom_otp_help') }}</div>
+                        </div>
                         <button type="submit" class="btn btn-success">
-                            <i class="bi bi-plus-circle"></i> {{ t('generate_new_otp_btn') }}
+                            <i class="bi bi-plus-circle"></i> {{ t('generate_custom_otp_btn') }}
                         </button>
                     </form>
 
