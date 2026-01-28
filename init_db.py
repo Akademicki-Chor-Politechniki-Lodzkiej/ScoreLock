@@ -35,6 +35,14 @@ def init_db():
         else:
             print(f"\n✓ Found {admin_count} existing admin user(s)")
 
+        # Check policies
+        policy_count = Policy.query.count()
+        if policy_count == 0:
+            print("\n✓ No policies found (you can create them in the admin panel)")
+        else:
+            active_count = Policy.query.filter_by(is_active=True).count()
+            print(f"\n✓ Found {policy_count} policy/policies ({active_count} active)")
+
         print("\n✓ Database initialization complete!")
         print("\nYou can now run the application with: python main.py")
 
