@@ -71,7 +71,6 @@ def test_database_config():
 
         # Try to parse connection details (without exposing password)
         try:
-            from urllib.parse import urlparse
             parsed = urlparse(db_url)
             print(f"  - Host: {parsed.hostname or 'localhost'}")
             print(f"  - Port: {parsed.port or 3306}")
