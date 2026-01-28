@@ -131,7 +131,21 @@ translations = {
         'custom_otp_placeholder': 'Enter a custom code or leave empty for random',
         'custom_otp_help': 'Leave empty to generate a random code',
         'generate_custom_otp_btn': 'Generate OTP',
-        'otp_code_label': 'OTP Code'
+        'otp_code_label': 'OTP Code',
+        # User management
+        'user_management_title': 'User Management',
+        'user_management_subtitle': 'Create new admin users',
+        'create_user_btn': 'Create User',
+        'new_username_label': 'Username',
+        'new_username_placeholder': 'Enter username',
+        'new_password_placeholder': 'Enter password',
+        'username_required': 'Username is required.',
+        'username_too_short': 'Username must be at least 3 characters long.',
+        'username_too_long': 'Username must be at most 80 characters long.',
+        'username_exists': 'Username already exists.',
+        'user_created_success': 'User created successfully!',
+        'admin_users_title': 'Admin Users',
+        'total_users': 'Total admin users'
     },
     'pl': {
         'brand': 'ScoreLock',
@@ -262,7 +276,21 @@ translations = {
         'custom_otp_placeholder': 'Wprowadź własny kod lub pozostaw puste dla losowego',
         'custom_otp_help': 'Pozostaw puste, aby wygenerować losowy kod',
         'generate_custom_otp_btn': 'Generuj OTP',
-        'otp_code_label': 'Kod OTP'
+        'otp_code_label': 'Kod OTP',
+        # User management
+        'user_management_title': 'Zarządzanie użytkownikami',
+        'user_management_subtitle': 'Tworzenie nowych użytkowników administratora',
+        'create_user_btn': 'Utwórz użytkownika',
+        'new_username_label': 'Nazwa użytkownika',
+        'new_username_placeholder': 'Wprowadź nazwę użytkownika',
+        'new_password_placeholder': 'Wprowadź hasło',
+        'username_required': 'Nazwa użytkownika jest wymagana.',
+        'username_too_short': 'Nazwa użytkownika musi mieć co najmniej 3 znaki.',
+        'username_too_long': 'Nazwa użytkownika może mieć maksymalnie 80 znaków.',
+        'username_exists': 'Nazwa użytkownika już istnieje.',
+        'user_created_success': 'Użytkownik został utworzony pomyślnie!',
+        'admin_users_title': 'Użytkownicy administracyjni',
+        'total_users': 'Łączna liczba użytkowników administratora'
     }
 }
 
