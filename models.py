@@ -117,3 +117,16 @@ class PolicyAcceptance(db.Model):
 
         return active_policy_ids.issubset(accepted_policy_ids)
 
+    @staticmethod
+    def get_pending_policies_for_session(session_id):
+        """Get policies that haven't been accepted by this session"""
+        active_policies = Policy.get_active_policies()
+        if not active_policies:
+            return []
+
+        accepted_policy_ids = {
+            pa.policy_id for pa in PolicyAcceptance.query.filter_by(session_id=session_id).all()
+        }
+
+        return [p for p in active_policies if p.id not in accepted_policy_ids]
+
