@@ -313,11 +313,16 @@ def library():
     # Check if OTP user has accepted all policies
     if session.get('otp_authenticated'):
         session_id = session.get('policy_session_id')
-        if session_id:
-            pending_policies = PolicyAcceptance.get_pending_policies_for_session(session_id)
-            if pending_policies:
-                flash('You must accept all policies to access the library.', 'warning')
-                return redirect(url_for('policy_acceptance'))
+
+        # If session_id is missing, create one for proper policy tracking
+        if not session_id:
+            session['policy_session_id'] = str(uuid4())
+            session_id = session['policy_session_id']
+
+        pending_policies = PolicyAcceptance.get_pending_policies_for_session(session_id)
+        if pending_policies:
+            flash('You must accept all policies to access the library.', 'warning')
+            return redirect(url_for('policy_acceptance'))
 
     # Support simple search via ?q=term (searches title and composer, case-insensitive)
     q = request.args.get('q', '')
@@ -389,11 +394,16 @@ def view_score(score_id):
     # Check if OTP user has accepted all policies
     if session.get('otp_authenticated'):
         session_id = session.get('policy_session_id')
-        if session_id:
-            pending_policies = PolicyAcceptance.get_pending_policies_for_session(session_id)
-            if pending_policies:
-                flash('You must accept all policies to access scores.', 'warning')
-                return redirect(url_for('policy_acceptance'))
+
+        # If session_id is missing, create one for proper policy tracking
+        if not session_id:
+            session['policy_session_id'] = str(uuid4())
+            session_id = session['policy_session_id']
+
+        pending_policies = PolicyAcceptance.get_pending_policies_for_session(session_id)
+        if pending_policies:
+            flash('You must accept all policies to access scores.', 'warning')
+            return redirect(url_for('policy_acceptance'))
 
     score = Score.query.get_or_404(score_id)
     return send_from_directory(app.config['UPLOAD_FOLDER'], score.filename)
