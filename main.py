@@ -964,5 +964,24 @@ def manage_policies():
     policies = Policy.query.order_by(Policy.created_at.desc()).all()
     return render_template('manage_policies.html', policies=policies)
 
+
+@app.route('/admin/policies/<int:policy_id>/delete', methods=['POST'])
+@login_required
+def delete_policy(policy_id):
+    policy = Policy.query.get_or_404(policy_id)
+
+    try:
+        # Delete associated acceptances first
+        PolicyAcceptance.query.filter_by(policy_id=policy_id).delete()
+        db.session.delete(policy)
+        db.session.commit()
+        flash(f'Policy "{policy.name}" deleted successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        app.logger.exception('Failed to delete policy: %s', e)
+        flash('Failed to delete policy.', 'danger')
+
+    return redirect(url_for('manage_policies'))
+
 if __name__ == '__main__':
     app.run(debug=True)
