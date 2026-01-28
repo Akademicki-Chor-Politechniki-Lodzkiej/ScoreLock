@@ -134,7 +134,7 @@ On windows:
 On Linux/Mac:
    ```bash
     cp scorelock.db scorelock.db.backup
- ```
+   ```
 
 2. **Create MySQL database** (see MySQL setup steps above)
 
