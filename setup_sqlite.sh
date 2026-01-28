@@ -66,6 +66,11 @@ echo ""
 
 # Install dependencies
 echo "Installing Python dependencies..."
+if ! command -v pip3 >/dev/null 2>&1; then
+    echo "Error: pip3 is not installed or not found in your PATH."
+    echo "Please ensure Python 3 and pip are installed correctly."
+    exit 1
+fi
 pip3 install -r requirements.txt
 if [ $? -ne 0 ]; then
     echo ""

@@ -47,7 +47,7 @@ def test_database_config():
         if db_url.startswith('sqlite:///'):
             db_path = db_url.replace('sqlite:///', '')
             if not os.path.isabs(db_path):
-                db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), db_path)
+                db_path = os.path.abspath(db_path)
             print(f"  - Database file path: {db_path}")
 
             # Check if directory is writable or can be created
@@ -71,7 +71,6 @@ def test_database_config():
 
         # Try to parse connection details (without exposing password)
         try:
-            from urllib.parse import urlparse
             parsed = urlparse(db_url)
             print(f"  - Host: {parsed.hostname or 'localhost'}")
             print(f"  - Port: {parsed.port or 3306}")

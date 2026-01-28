@@ -193,10 +193,10 @@ On Linux/Mac:
 ### Backup Strategies
 
 **SQLite:**
-On windows:
-```bash
+On Windows (PowerShell):
+```powershell
 # Simple file copy
-copy scorelock.db backups\scorelock_$(date +%Y%m%d).db
+Copy-Item .\scorelock.db ("backups\scorelock_{0:yyyyMMdd}.db" -f (Get-Date))
 ```
 On Linux/Mac:
 ```bash
