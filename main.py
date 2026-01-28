@@ -422,7 +422,30 @@ def admin_dashboard():
 @login_required
 @limiter.limit("20 per hour")
 def generate_otp():
-    code = OTP.generate_code()
+    # Check if a custom code was provided
+    custom_code = request.form.get('custom_code', '').strip()
+
+    if custom_code:
+        # Validate custom code
+        if len(custom_code) < 6:
+            flash('Custom OTP code must be at least 6 characters long.', 'danger')
+            return redirect(url_for('admin_dashboard'))
+
+        if len(custom_code) > 50:
+            flash('Custom OTP code must be at most 50 characters long.', 'danger')
+            return redirect(url_for('admin_dashboard'))
+
+        # Check if code already exists
+        existing = OTP.query.filter_by(code=custom_code).first()
+        if existing:
+            flash('This OTP code already exists. Please choose a different one.', 'danger')
+            return redirect(url_for('admin_dashboard'))
+
+        code = custom_code
+    else:
+        # Generate random code
+        code = OTP.generate_code()
+
     new_otp = OTP(code=code, created_by=current_user.id)
     db.session.add(new_otp)
     db.session.commit()
