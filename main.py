@@ -261,7 +261,6 @@ def login():
 
                 # Get or create session ID for policy tracking
                 if 'policy_session_id' not in session:
-                    from uuid import uuid4
                     session['policy_session_id'] = str(uuid4())
 
                 # Check if this session needs to accept policies
