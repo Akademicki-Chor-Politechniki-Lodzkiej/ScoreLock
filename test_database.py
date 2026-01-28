@@ -14,7 +14,29 @@ def test_database_config():
     print("ScoreLock Database Configuration Test")
     print("=" * 60)
 
-    print(f"\nCurrent DATABASE_URL: {db_url}")
+    # Mask sensitive information in the URL (particularly passwords)
+    from urllib.parse import urlparse, urlunparse
+    try:
+        parsed = urlparse(db_url)
+        if parsed.password:
+            # Reconstruct URL with masked password
+            masked_netloc = f"{parsed.username}:****@{parsed.hostname}"
+            if parsed.port:
+                masked_netloc += f":{parsed.port}"
+            masked_url = urlunparse((
+                parsed.scheme,
+                masked_netloc,
+                parsed.path,
+                parsed.params,
+                parsed.query,
+                parsed.fragment
+            ))
+            print(f"\nCurrent DATABASE_URL: {masked_url}")
+        else:
+            print(f"\nCurrent DATABASE_URL: {db_url}")
+    except Exception:
+        # If parsing fails, just print as-is (likely SQLite)
+        print(f"\nCurrent DATABASE_URL: {db_url}")
 
     if db_url.startswith('sqlite:'):
         print("\n✓ Using SQLite database")
