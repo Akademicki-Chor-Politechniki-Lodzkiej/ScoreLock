@@ -71,3 +71,65 @@ class SiteSettings(db.Model):
             db.session.commit()
         return settings
 
+class Policy(db.Model):
+    __tablename__ = 'policies'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    short_notice = db.Column(db.Text, nullable=False)
+    full_policy = db.Column(db.Text, nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by = db.Column(db.Integer, db.ForeignKey('admins.id'), nullable=False)
+
+    admin = db.relationship('Admin', backref='created_policies')
+
+    @staticmethod
+    def get_active_policies():
+        """Get all active policies"""
+        return Policy.query.filter_by(is_active=True).order_by(Policy.created_at.asc()).all()
+
+class PolicyAcceptance(db.Model):
+    __tablename__ = 'policy_acceptances'
+    __table_args__ = (
+        db.UniqueConstraint('session_id', 'policy_id', name='uq_session_policy'),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(255), nullable=False)  # Flask session ID
+    otp_id = db.Column(db.Integer, db.ForeignKey('otps.id', ondelete='CASCADE'), nullable=False)  # For reference
+    policy_id = db.Column(db.Integer, db.ForeignKey('policies.id', ondelete='CASCADE'), nullable=False)
+    accepted_at = db.Column(db.DateTime, default=datetime.utcnow)
+    ip_address = db.Column(db.String(45), nullable=True)  # Support IPv6
+
+    otp = db.relationship('OTP', backref='policy_acceptances')
+    policy = db.relationship('Policy', backref='acceptances')
+
+    @staticmethod
+    def check_session_policies_accepted(session_id):
+        """Check if current session has accepted all active policies"""
+        active_policies = Policy.get_active_policies()
+        if not active_policies:
+            return True  # No policies to accept
+
+        active_policy_ids = {p.id for p in active_policies}
+        accepted_policy_ids = {
+            pa.policy_id for pa in PolicyAcceptance.query.filter_by(session_id=session_id).all()
+        }
+
+        return active_policy_ids.issubset(accepted_policy_ids)
+
+    @staticmethod
+    def get_pending_policies_for_session(session_id):
+        """Get policies that haven't been accepted by this session"""
+        active_policies = Policy.get_active_policies()
+        if not active_policies:
+            return []
+
+        accepted_policy_ids = {
+            pa.policy_id for pa in PolicyAcceptance.query.filter_by(session_id=session_id).all()
+        }
+
+        return [p for p in active_policies if p.id not in accepted_policy_ids]
+

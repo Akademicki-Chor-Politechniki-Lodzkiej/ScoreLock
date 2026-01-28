@@ -1,5 +1,5 @@
 from main import app
-from models import db, Admin
+from models import db, Admin, SiteSettings, Policy
 import sys, getpass
 
 def init_db():
@@ -8,6 +8,16 @@ def init_db():
         # Create all tables
         db.create_all()
         print("✓ Database tables created successfully!")
+
+        # Initialize Site Settings
+        settings = SiteSettings.query.first()
+        if not settings:
+            settings = SiteSettings(site_name='ScoreLock')
+            db.session.add(settings)
+            db.session.commit()
+            print("✓ Site settings initialized with default values")
+        else:
+            print(f"✓ Site settings already exist (Site name: {settings.site_name})")
 
         # Check if admin exists
         admin_count = Admin.query.count()
@@ -25,8 +35,22 @@ def init_db():
         else:
             print(f"\n✓ Found {admin_count} existing admin user(s)")
 
+        # Check policies
+        policy_count = Policy.query.count()
+        if policy_count == 0:
+            print("\n✓ No policies found (you can create them in the admin panel)")
+        else:
+            active_count = Policy.query.filter_by(is_active=True).count()
+            print(f"\n✓ Found {policy_count} policy/policies ({active_count} active)")
+
         print("\n✓ Database initialization complete!")
         print("\nYou can now run the application with: python main.py")
+        print("\nNext steps:")
+        print("1. Start the application: python main.py")
+        print("2. Log in as admin")
+        print("3. Customize site settings (optional)")
+        print("4. Create policies for OTP users (optional)")
+        print("5. Generate OTP codes for users")
 
 def create_admin():
     """Create a new admin user"""

@@ -4,13 +4,14 @@ from flask import Flask, render_template, request, redirect, url_for, flash, sen
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
-from models import db, Admin, OTP, Score, SiteSettings
+from models import db, Admin, OTP, Score, SiteSettings, Policy, PolicyAcceptance
 from datetime import datetime, timedelta
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from uuid import uuid4
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from urllib.parse import urlparse, urljoin
+from sqlalchemy.exc import IntegrityError
 
 ITEMS_PER_PAGE = 12
 
@@ -259,6 +260,17 @@ def login():
                 session['otp_authenticated'] = True
                 session['otp_id'] = otp.id
 
+                # Get or create session ID for policy tracking
+                if 'policy_session_id' not in session:
+                    session['policy_session_id'] = str(uuid4())
+
+                # Check if this session needs to accept policies
+                session_id = session['policy_session_id']
+                pending_policies = PolicyAcceptance.get_pending_policies_for_session(session_id)
+                if pending_policies:
+                    # Redirect to policy acceptance page
+                    return redirect(url_for('policy_acceptance'))
+
                 flash('Welcome! You have been authenticated with OTP for limited access.', 'success')
                 return redirect(url_for('library'))
             else:
@@ -298,6 +310,21 @@ def library():
     if not is_authorized():
         flash('Please login to access the library.', 'warning')
         return redirect(url_for('login'))
+
+    # Check if OTP user has accepted all policies
+    if session.get('otp_authenticated'):
+        session_id = session.get('policy_session_id')
+
+        # If session_id is missing, create one for proper policy tracking
+        if not session_id:
+            session['policy_session_id'] = str(uuid4())
+            session_id = session['policy_session_id']
+
+        pending_policies = PolicyAcceptance.get_pending_policies_for_session(session_id)
+        if pending_policies:
+            flash('You must accept all policies to access the library.', 'warning')
+            return redirect(url_for('policy_acceptance'))
+
     # Support simple search via ?q=term (searches title and composer, case-insensitive)
     q = request.args.get('q', '')
     # Sanitize and limit length to avoid abuse
@@ -364,6 +391,21 @@ def view_score(score_id):
     if not is_authorized():
         flash('Please login to access the score.', 'warning')
         return redirect(url_for('login'))
+
+    # Check if OTP user has accepted all policies
+    if session.get('otp_authenticated'):
+        session_id = session.get('policy_session_id')
+
+        # If session_id is missing, create one for proper policy tracking
+        if not session_id:
+            session['policy_session_id'] = str(uuid4())
+            session_id = session['policy_session_id']
+
+        pending_policies = PolicyAcceptance.get_pending_policies_for_session(session_id)
+        if pending_policies:
+            flash('You must accept all policies to access scores.', 'warning')
+            return redirect(url_for('policy_acceptance'))
+
     score = Score.query.get_or_404(score_id)
     return send_from_directory(app.config['UPLOAD_FOLDER'], score.filename)
 
@@ -373,7 +415,8 @@ def admin_dashboard():
     otps = OTP.query.filter_by(created_by=current_user.id).order_by(OTP.created_at.desc()).all()
     scores = Score.query.order_by(Score.uploaded_at.desc()).all()
     settings = SiteSettings.get_settings()
-    return render_template('admin.html', otps=otps, scores=scores, settings=settings)
+    policies = Policy.query.order_by(Policy.created_at.desc()).all()
+    return render_template('admin.html', otps=otps, scores=scores, settings=settings, policies=policies)
 
 @app.route('/admin/generate-otp', methods=['POST'])
 @login_required
@@ -883,6 +926,183 @@ def clear_site_settings():
         flash('Failed to clear site settings.', 'danger')
 
     return redirect(url_for('admin_dashboard'))
+
+@app.route('/policy-acceptance', methods=['GET', 'POST'])
+def policy_acceptance():
+    # Must be an OTP authenticated user
+    if not session.get('otp_authenticated'):
+        flash('Please login with OTP to continue.', 'warning')
+        return redirect(url_for('login'))
+
+    otp_id = session.get('otp_id')
+    session_id = session.get('policy_session_id')
+
+    if not otp_id or not session_id:
+        flash('Session error. Please login again.', 'danger')
+        return redirect(url_for('logout'))
+
+    pending_policies = PolicyAcceptance.get_pending_policies_for_session(session_id)
+
+    if not pending_policies:
+        # All policies accepted, redirect to library
+        return redirect(url_for('library'))
+
+    if request.method == 'POST':
+        action = request.form.get('action')
+
+        if action == 'accept':
+            # Record acceptance for all pending policies
+            ip_address = request.remote_addr
+            added_count = 0
+
+            for policy in pending_policies:
+                # Check if acceptance already exists (defense in depth)
+                existing = PolicyAcceptance.query.filter_by(
+                    session_id=session_id,
+                    policy_id=policy.id
+                ).first()
+
+                if existing:
+                    # Already accepted, skip
+                    continue
+
+                acceptance = PolicyAcceptance(
+                    session_id=session_id,
+                    otp_id=otp_id,
+                    policy_id=policy.id,
+                    ip_address=ip_address
+                )
+                db.session.add(acceptance)
+                added_count += 1
+
+            if added_count > 0:
+                try:
+                    db.session.commit()
+                    flash('Thank you for accepting the policies. You may now access the library.', 'success')
+                    return redirect(url_for('library'))
+                except IntegrityError:
+                    # Duplicate key violation - someone else already accepted or race condition
+                    db.session.rollback()
+                    # Check again if all policies are now accepted
+                    remaining = PolicyAcceptance.get_pending_policies_for_session(session_id)
+                    if not remaining:
+                        flash('Thank you for accepting the policies. You may now access the library.', 'success')
+                        return redirect(url_for('library'))
+                    else:
+                        flash('Some policies were already accepted. Please try again.', 'warning')
+                except Exception as e:
+                    db.session.rollback()
+                    app.logger.exception('Failed to record policy acceptance: %s', e)
+                    flash('Failed to record policy acceptance. Please try again.', 'danger')
+            else:
+                # All policies were already accepted
+                flash('Thank you for accepting the policies. You may now access the library.', 'success')
+                return redirect(url_for('library'))
+
+        elif action == 'decline':
+            # User declined - log them out
+            flash('You must accept all policies to access the library. You have been logged out.', 'warning')
+            return redirect(url_for('logout'))
+
+    return render_template('policy_acceptance.html', policies=pending_policies)
+
+@app.route('/policy/<int:policy_id>')
+def view_policy(policy_id):
+    """View full policy text"""
+    policy = Policy.query.get_or_404(policy_id)
+
+    # Only allow viewing active policies, unless user is an admin
+    if not policy.is_active and not current_user.is_authenticated:
+        # Return 404 to avoid revealing existence of inactive policies
+        flash('Policy not found or no longer available.', 'warning')
+        return redirect(url_for('index')), 404
+
+    return render_template('policy_view.html', policy=policy)
+
+@app.route('/admin/policies', methods=['GET', 'POST'])
+@login_required
+def manage_policies():
+    if request.method == 'POST':
+        action = request.form.get('action')
+
+        if action == 'create':
+            name = request.form.get('name', '').strip()
+            short_notice = request.form.get('short_notice', '').strip()
+            full_policy = request.form.get('full_policy', '').strip()
+
+            # Validation
+            if not name:
+                flash('Policy name is required.', 'danger')
+                return redirect(url_for('manage_policies'))
+
+            if len(name) > 200:
+                flash('Policy name is too long (max 200 characters).', 'danger')
+                return redirect(url_for('manage_policies'))
+
+            if not short_notice:
+                flash('Short notice is required.', 'danger')
+                return redirect(url_for('manage_policies'))
+
+            if not full_policy:
+                flash('Full policy text is required.', 'danger')
+                return redirect(url_for('manage_policies'))
+
+            # Create policy
+            policy = Policy(
+                name=name,
+                short_notice=short_notice,
+                full_policy=full_policy,
+                created_by=current_user.id
+            )
+
+            try:
+                db.session.add(policy)
+                db.session.commit()
+                flash(f'Policy "{name}" created successfully!', 'success')
+            except Exception as e:
+                db.session.rollback()
+                app.logger.exception('Failed to create policy: %s', e)
+                flash('Failed to create policy.', 'danger')
+
+            return redirect(url_for('manage_policies'))
+
+    policies = Policy.query.order_by(Policy.created_at.desc()).all()
+    return render_template('manage_policies.html', policies=policies)
+
+@app.route('/admin/policies/<int:policy_id>/toggle', methods=['POST'])
+@login_required
+def toggle_policy(policy_id):
+    policy = Policy.query.get_or_404(policy_id)
+    policy.is_active = not policy.is_active
+
+    try:
+        db.session.commit()
+        status = 'activated' if policy.is_active else 'deactivated'
+        flash(f'Policy "{policy.name}" {status} successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        app.logger.exception('Failed to toggle policy: %s', e)
+        flash('Failed to update policy status.', 'danger')
+
+    return redirect(url_for('manage_policies'))
+
+@app.route('/admin/policies/<int:policy_id>/delete', methods=['POST'])
+@login_required
+def delete_policy(policy_id):
+    policy = Policy.query.get_or_404(policy_id)
+
+    try:
+        # Delete associated acceptances first (for database compatibility; CASCADE is also defined at DB level)
+        PolicyAcceptance.query.filter_by(policy_id=policy_id).delete()
+        db.session.delete(policy)
+        db.session.commit()
+        flash(f'Policy "{policy.name}" deleted successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        app.logger.exception('Failed to delete policy: %s', e)
+        flash('Failed to delete policy.', 'danger')
+
+    return redirect(url_for('manage_policies'))
 
 if __name__ == '__main__':
     app.run(debug=True)
