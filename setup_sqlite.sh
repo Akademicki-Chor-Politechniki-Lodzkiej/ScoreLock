@@ -92,6 +92,14 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo ""
     echo "Initializing database..."
     python3 init_db.py
+    if [ $? -ne 0 ]; then
+        echo ""
+        echo "Error: Database initialization failed."
+        echo "Please review the error messages above and fix any issues before running 'python3 init_db.py' again."
+    else
+        echo ""
+        echo "Database initialized successfully."
+    fi
     echo ""
 else
     echo ""
