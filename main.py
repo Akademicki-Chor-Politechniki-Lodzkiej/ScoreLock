@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, sen
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
-from models import db, Admin, OTP, Score
+from models import db, Admin, OTP, Score, SiteSettings
 from datetime import datetime, timedelta
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from uuid import uuid4
@@ -66,6 +66,16 @@ def t(key):
 app.jinja_env.globals['t'] = t
 app.jinja_env.globals['available_languages'] = available_languages
 
+@app.context_processor
+def inject_site_settings():
+    """Inject site settings into all templates"""
+    try:
+        settings = SiteSettings.get_settings()
+        return {'site_settings': settings}
+    except Exception:
+        # Return defaults if database isn't initialized yet
+        return {'site_settings': None}
+
 
 def is_safe_url(target):
     """Return True if the target URL is same-origin (safe) relative to the request host."""
@@ -105,6 +115,117 @@ def is_authorized():
     try:
         return current_user.is_authenticated or session.get('otp_authenticated')
     except Exception:
+        return False
+
+# File upload helper functions
+
+def validate_and_process_upload(file_obj, allowed_extensions, max_size_bytes, file_type_name, filename_prefix):
+    """
+    Validate and process an uploaded file.
+
+    Args:
+        file_obj: FileStorage object from request.files
+        allowed_extensions: Set of allowed file extensions (e.g., {'.png', '.jpg'})
+        max_size_bytes: Maximum allowed file size in bytes
+        file_type_name: Display name for error messages (e.g., 'Logo', 'Favicon')
+        filename_prefix: Prefix for the saved filename (e.g., 'logo_', 'favicon_')
+
+    Returns:
+        Tuple of (success: bool, filename: str or None, error_message: str or None)
+    """
+    if not file_obj or file_obj.filename == '':
+        return False, None, None
+
+    # Validate file type
+    file_ext = os.path.splitext(file_obj.filename.lower())[1]
+    if file_ext not in allowed_extensions:
+        ext_list = ', '.join(sorted(allowed_extensions)).upper()
+        return False, None, f'{file_type_name} must be one of: {ext_list}'
+
+    # Read and validate file size
+    data = file_obj.read()
+    if len(data) > max_size_bytes:
+        size_mb = max_size_bytes / (1024 * 1024)
+        return False, None, f'{file_type_name} file is too large (max {size_mb:.0f}MB)'
+
+    # Generate secure filename
+    filename = secure_filename(file_obj.filename)
+    if not filename:
+        filename = f"{uuid4().hex}{file_ext}"
+
+    filename = filename.replace(os.path.sep, '_').replace('/', '_').lstrip('.')
+    timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S_')
+    filename = f"{filename_prefix}{timestamp}{filename}"
+
+    return True, filename, data
+
+def save_uploaded_file(filename, data, old_filename=None):
+    """
+    Save an uploaded file to the static folder with path validation.
+
+    Args:
+        filename: The secure filename to save as
+        data: Binary file data
+        old_filename: Optional old filename to delete
+
+    Returns:
+        Tuple of (success: bool, error_message: str or None)
+    """
+    static_folder = os.path.join(app.root_path, 'static')
+    filepath = os.path.join(static_folder, filename)
+
+    # Validate path to prevent traversal attacks
+    static_folder_abs = os.path.abspath(static_folder)
+    filepath_abs = os.path.abspath(filepath)
+
+    try:
+        if os.path.commonpath([static_folder_abs, filepath_abs]) != static_folder_abs:
+            app.logger.error('Detected attempted path traversal in file upload: %s', filepath_abs)
+            return False, 'Invalid upload path'
+    except Exception as e:
+        app.logger.exception('Error validating upload path: %s', e)
+        return False, 'Invalid upload path'
+
+    # Delete old file if it exists
+    if old_filename:
+        old_filepath = os.path.join(static_folder, old_filename)
+        try:
+            if os.path.exists(old_filepath):
+                os.remove(old_filepath)
+        except Exception as e:
+            app.logger.exception('Failed to remove old file %s: %s', old_filename, e)
+
+    # Save new file
+    try:
+        with open(filepath, 'wb') as f:
+            f.write(data)
+        return True, None
+    except Exception as e:
+        app.logger.exception('Failed to save file %s: %s', filename, e)
+        return False, f'Failed to save {filename}'
+
+def delete_static_file(filename):
+    """
+    Delete a file from the static folder.
+
+    Args:
+        filename: The filename to delete
+
+    Returns:
+        bool: True if successful or file didn't exist, False on error
+    """
+    if not filename:
+        return True
+
+    static_folder = os.path.join(app.root_path, 'static')
+    filepath = os.path.join(static_folder, filename)
+
+    try:
+        if os.path.exists(filepath):
+            os.remove(filepath)
+        return True
+    except Exception as e:
+        app.logger.exception('Failed to delete file %s: %s', filename, e)
         return False
 
 # Routes
@@ -251,7 +372,8 @@ def view_score(score_id):
 def admin_dashboard():
     otps = OTP.query.filter_by(created_by=current_user.id).order_by(OTP.created_at.desc()).all()
     scores = Score.query.order_by(Score.uploaded_at.desc()).all()
-    return render_template('admin.html', otps=otps, scores=scores)
+    settings = SiteSettings.get_settings()
+    return render_template('admin.html', otps=otps, scores=scores, settings=settings)
 
 @app.route('/admin/generate-otp', methods=['POST'])
 @login_required
@@ -657,6 +779,109 @@ def delete_score(score_id):
             flash('Score record deleted but failed to remove temporary backup file; please delete it manually.', 'warning')
 
     flash('Score deleted successfully.', 'success')
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/settings', methods=['POST'])
+@login_required
+def update_site_settings():
+    settings = SiteSettings.get_settings()
+
+    # Update site name
+    site_name = request.form.get('site_name', '').strip()
+    if site_name:
+        if len(site_name) > 100:
+            flash('Site name is too long (max 100 characters).', 'danger')
+            return redirect(url_for('admin_dashboard'))
+        settings.site_name = site_name
+
+    # Handle logo upload
+    if 'logo' in request.files:
+        logo_file = request.files['logo']
+        success, result, data_or_error = validate_and_process_upload(
+            logo_file,
+            allowed_extensions={'.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'},
+            max_size_bytes=2 * 1024 * 1024,  # 2MB
+            file_type_name='Logo',
+            filename_prefix='logo_'
+        )
+
+        if success:
+            # result is the filename, data_or_error is the file data
+            save_success, error_msg = save_uploaded_file(result, data_or_error, settings.logo_filename)
+            if save_success:
+                settings.logo_filename = result
+            else:
+                flash(error_msg, 'danger')
+                return redirect(url_for('admin_dashboard'))
+        elif result is not None:
+            # Validation failed, data_or_error contains error message
+            flash(data_or_error, 'danger')
+            return redirect(url_for('admin_dashboard'))
+
+    # Handle favicon upload
+    if 'favicon' in request.files:
+        favicon_file = request.files['favicon']
+        success, result, data_or_error = validate_and_process_upload(
+            favicon_file,
+            allowed_extensions={'.ico', '.png', '.svg'},
+            max_size_bytes=1024 * 1024,  # 1MB
+            file_type_name='Favicon',
+            filename_prefix='favicon_'
+        )
+
+        if success:
+            # result is the filename, data_or_error is the file data
+            save_success, error_msg = save_uploaded_file(result, data_or_error, settings.favicon_filename)
+            if save_success:
+                settings.favicon_filename = result
+            else:
+                flash(error_msg, 'danger')
+                return redirect(url_for('admin_dashboard'))
+        elif result is not None:
+            # Validation failed, data_or_error contains error message
+            flash(data_or_error, 'danger')
+            return redirect(url_for('admin_dashboard'))
+
+    # Update metadata
+    settings.updated_by = current_user.id
+    settings.updated_at = datetime.utcnow()
+
+    try:
+        db.session.commit()
+        flash('Site settings updated successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        app.logger.exception('Failed to update site settings: %s', e)
+        flash('Failed to update site settings.', 'danger')
+
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/settings/clear', methods=['POST'])
+@login_required
+def clear_site_settings():
+    settings = SiteSettings.get_settings()
+
+    # Delete logo file if exists
+    delete_static_file(settings.logo_filename)
+
+    # Delete favicon file if exists
+    delete_static_file(settings.favicon_filename)
+
+    # Reset to defaults
+    settings.site_name = 'ScoreLock'
+    settings.logo_filename = None
+    settings.favicon_filename = None
+    settings.updated_by = current_user.id
+    settings.updated_at = datetime.utcnow()
+
+    try:
+        db.session.commit()
+        flash('Site settings have been reset to defaults!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        app.logger.exception('Failed to clear site settings: %s', e)
+        flash('Failed to clear site settings.', 'danger')
+
     return redirect(url_for('admin_dashboard'))
 
 if __name__ == '__main__':

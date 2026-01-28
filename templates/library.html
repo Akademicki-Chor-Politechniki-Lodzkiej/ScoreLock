@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ t('nav_library') }} - {{ t('brand') }}{% endblock %}
+{% block title %}{{ t('nav_library') }} - {{ site_settings.site_name if site_settings else t('brand') }}{% endblock %}
 
 {% block content %}
 <div class="container py-5">
