@@ -241,6 +241,59 @@
                 </div>
             </div>
         </div>
+
+        <!-- Policies Management -->
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="bi bi-shield-check"></i> {{ t('policies_management_title') }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>{{ t('policies_management_intro') }}</p>
+
+                    {% if policies %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        {{ t('total_policies') }}: <strong>{{ policies|length }}</strong>
+                        ({{ policies|selectattr('is_active')|list|length }} {{ t('active_label') }})
+                    </div>
+
+                    <div class="list-group mb-3">
+                        {% for policy in policies[:5] %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ policy.name }}</strong>
+                                {% if policy.is_active %}
+                                <span class="badge bg-success ms-2">{{ t('active_label') }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary ms-2">{{ t('inactive_label') }}</span>
+                                {% endif %}
+                                <br>
+                                <small class="text-muted">{{ policy.short_notice[:80] }}{% if policy.short_notice|length > 80 %}...{% endif %}</small>
+                            </div>
+                            <a href="{{ url_for('view_policy', policy_id=policy.id) }}"
+                               class="btn btn-sm btn-outline-primary" target="_blank">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    {% if policies|length > 5 %}
+                    <small class="text-muted">{{ t('showing_first_5_policies') }}</small>
+                    {% endif %}
+                    {% else %}
+                    <p class="text-muted">{{ t('no_policies_yet') }}</p>
+                    {% endif %}
+
+                    <a href="{{ url_for('manage_policies') }}" class="btn btn-warning">
+                        <i class="bi bi-gear"></i> {{ t('manage_policies_btn') }}
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
