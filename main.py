@@ -11,6 +11,7 @@ from uuid import uuid4
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from urllib.parse import urlparse, urljoin
+from sqlalchemy.exc import IntegrityError
 
 ITEMS_PER_PAGE = 12
 
@@ -952,8 +953,19 @@ def policy_acceptance():
         if action == 'accept':
             # Record acceptance for all pending policies
             ip_address = request.remote_addr
+            added_count = 0
 
             for policy in pending_policies:
+                # Check if acceptance already exists (defense in depth)
+                existing = PolicyAcceptance.query.filter_by(
+                    session_id=session_id,
+                    policy_id=policy.id
+                ).first()
+
+                if existing:
+                    # Already accepted, skip
+                    continue
+
                 acceptance = PolicyAcceptance(
                     session_id=session_id,
                     otp_id=otp_id,
@@ -961,15 +973,31 @@ def policy_acceptance():
                     ip_address=ip_address
                 )
                 db.session.add(acceptance)
+                added_count += 1
 
-            try:
-                db.session.commit()
+            if added_count > 0:
+                try:
+                    db.session.commit()
+                    flash('Thank you for accepting the policies. You may now access the library.', 'success')
+                    return redirect(url_for('library'))
+                except IntegrityError:
+                    # Duplicate key violation - someone else already accepted or race condition
+                    db.session.rollback()
+                    # Check again if all policies are now accepted
+                    remaining = PolicyAcceptance.get_pending_policies_for_session(session_id)
+                    if not remaining:
+                        flash('Thank you for accepting the policies. You may now access the library.', 'success')
+                        return redirect(url_for('library'))
+                    else:
+                        flash('Some policies were already accepted. Please try again.', 'warning')
+                except Exception as e:
+                    db.session.rollback()
+                    app.logger.exception('Failed to record policy acceptance: %s', e)
+                    flash('Failed to record policy acceptance. Please try again.', 'danger')
+            else:
+                # All policies were already accepted
                 flash('Thank you for accepting the policies. You may now access the library.', 'success')
                 return redirect(url_for('library'))
-            except Exception as e:
-                db.session.rollback()
-                app.logger.exception('Failed to record policy acceptance: %s', e)
-                flash('Failed to record policy acceptance. Please try again.', 'danger')
 
         elif action == 'decline':
             # User declined - log them out
