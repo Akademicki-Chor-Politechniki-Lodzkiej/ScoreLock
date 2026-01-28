@@ -25,8 +25,9 @@ echo.
 
 :create_env
 echo Creating .env file with SQLite configuration...
+for /f "usebackq delims=" %%K in (`python -c "import secrets; print(secrets.token_hex(32))"`) do set "SECRET_KEY=%%K"
 (
-    echo SECRET_KEY=%RANDOM%%RANDOM%%RANDOM%%RANDOM%
+    echo SECRET_KEY=%SECRET_KEY%
     echo DATABASE_URL=sqlite:///scorelock.db
     echo UPLOAD_FOLDER=scores
 ) > .env
