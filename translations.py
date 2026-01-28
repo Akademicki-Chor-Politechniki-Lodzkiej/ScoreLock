@@ -113,7 +113,25 @@ translations = {
         'accept_all_btn': 'Accept All Policies',
         'policy_created_label': 'Policy created',
         'close_btn': 'Close',
-        'back_btn': 'Back'
+        'back_btn': 'Back',
+        # Password change
+        'change_password_title': 'Change Password',
+        'change_password_subtitle': 'Update your admin account password',
+        'current_password_label': 'Current Password',
+        'new_password_label': 'New Password',
+        'confirm_password_label': 'Confirm New Password',
+        'change_password_btn': 'Change Password',
+        'password_changed_success': 'Password changed successfully!',
+        'password_mismatch': 'New passwords do not match.',
+        'current_password_incorrect': 'Current password is incorrect.',
+        'password_too_short': 'Password must be at least 8 characters long.',
+        # Custom OTP
+        'custom_otp_title': 'Custom OTP Code',
+        'custom_otp_label': 'Custom OTP Code',
+        'custom_otp_placeholder': 'Enter a custom code or leave empty for random',
+        'custom_otp_help': 'Leave empty to generate a random code',
+        'generate_custom_otp_btn': 'Generate OTP',
+        'otp_code_label': 'OTP Code'
     },
     'pl': {
         'brand': 'ScoreLock',
@@ -226,7 +244,25 @@ translations = {
         'accept_all_btn': 'Akceptuj wszystkie polityki',
         'policy_created_label': 'Polityka utworzona',
         'close_btn': 'Zamknij',
-        'back_btn': 'Wstecz'
+        'back_btn': 'Wstecz',
+        # Password change
+        'change_password_title': 'Zmień hasło',
+        'change_password_subtitle': 'Zaktualizuj hasło do konta admina',
+        'current_password_label': 'Obecne hasło',
+        'new_password_label': 'Nowe hasło',
+        'confirm_password_label': 'Potwierdź nowe hasło',
+        'change_password_btn': 'Zmień hasło',
+        'password_changed_success': 'Hasło zostało zmienione pomyślnie!',
+        'password_mismatch': 'Nowe hasła nie są identyczne.',
+        'current_password_incorrect': 'Obecne hasło jest nieprawidłowe.',
+        'password_too_short': 'Hasło musi mieć co najmniej 8 znaków.',
+        # Custom OTP
+        'custom_otp_title': 'Własny kod OTP',
+        'custom_otp_label': 'Własny kod OTP',
+        'custom_otp_placeholder': 'Wprowadź własny kod lub pozostaw puste dla losowego',
+        'custom_otp_help': 'Pozostaw puste, aby wygenerować losowy kod',
+        'generate_custom_otp_btn': 'Generuj OTP',
+        'otp_code_label': 'Kod OTP'
     }
 }
 

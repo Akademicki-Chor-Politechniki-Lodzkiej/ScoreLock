@@ -422,7 +422,30 @@ def admin_dashboard():
 @login_required
 @limiter.limit("20 per hour")
 def generate_otp():
-    code = OTP.generate_code()
+    # Check if a custom code was provided
+    custom_code = request.form.get('custom_code', '').strip()
+
+    if custom_code:
+        # Validate custom code
+        if len(custom_code) < 6:
+            flash('Custom OTP code must be at least 6 characters long.', 'danger')
+            return redirect(url_for('admin_dashboard'))
+
+        if len(custom_code) > 20:
+            flash('Custom OTP code must be at most 20 characters long.', 'danger')
+            return redirect(url_for('admin_dashboard'))
+
+        # Check if code already exists
+        existing = OTP.query.filter_by(code=custom_code).first()
+        if existing:
+            flash('This OTP code already exists. Please choose a different one.', 'danger')
+            return redirect(url_for('admin_dashboard'))
+
+        code = custom_code
+    else:
+        # Generate random code
+        code = OTP.generate_code()
+
     new_otp = OTP(code=code, created_by=current_user.id)
     db.session.add(new_otp)
     db.session.commit()
@@ -439,6 +462,46 @@ def deactivate_otp(otp_id):
         flash('OTP deactivated successfully.', 'success')
     else:
         flash('You can only deactivate your own OTPs.', 'danger')
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/change-password', methods=['POST'])
+@login_required
+@limiter.limit("5 per hour")
+def change_password():
+    current_password = request.form.get('current_password', '')
+    new_password = request.form.get('new_password', '')
+    confirm_password = request.form.get('confirm_password', '')
+
+    # Validate inputs
+    if not current_password or not new_password or not confirm_password:
+        flash('All password fields are required.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    # Check if current password is correct
+    if not current_user.check_password(current_password):
+        flash('Current password is incorrect.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    # Check if new passwords match
+    if new_password != confirm_password:
+        flash('New passwords do not match.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    # Validate password strength
+    if len(new_password) < 8:
+        flash('Password must be at least 8 characters long.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    # Update password
+    try:
+        current_user.set_password(new_password)
+        db.session.commit()
+        flash('Password changed successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        app.logger.exception('Failed to change password: %s', e)
+        flash('Failed to change password.', 'danger')
+
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/edit-score/<int:score_id>', methods=['POST'])

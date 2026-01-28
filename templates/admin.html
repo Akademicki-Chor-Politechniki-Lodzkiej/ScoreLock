@@ -59,11 +59,16 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <p>{{ t('generate_otp_title') }} {{ t('no_otps') }}</p>
                     <form method="POST" action="{{ url_for('generate_otp') }}">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label for="custom_code" class="form-label">{{ t('custom_otp_label') }}</label>
+                            <input type="text" class="form-control" id="custom_code" name="custom_code"
+                                   placeholder="{{ t('custom_otp_placeholder') }}" maxlength="20">
+                            <div class="form-text">{{ t('custom_otp_help') }}</div>
+                        </div>
                         <button type="submit" class="btn btn-success">
-                            <i class="bi bi-plus-circle"></i> {{ t('generate_new_otp_btn') }}
+                            <i class="bi bi-plus-circle"></i> {{ t('generate_custom_otp_btn') }}
                         </button>
                     </form>
 
@@ -96,6 +101,44 @@
                     {% else %}
                     <p class="text-muted">{{ t('no_otps') }}</p>
                     {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Change Section -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="bi bi-shield-lock"></i> {{ t('change_password_title') }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">{{ t('change_password_subtitle') }}</p>
+                    <form method="POST" action="{{ url_for('change_password') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label for="current_password" class="form-label">{{ t('current_password_label') }}</label>
+                            <input type="password" class="form-control" id="current_password"
+                                   name="current_password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="new_password" class="form-label">{{ t('new_password_label') }}</label>
+                            <input type="password" class="form-control" id="new_password"
+                                   name="new_password" required minlength="8">
+                            <div class="form-text">{{ t('password_too_short') }}</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirm_password" class="form-label">{{ t('confirm_password_label') }}</label>
+                            <input type="password" class="form-control" id="confirm_password"
+                                   name="confirm_password" required minlength="8">
+                        </div>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-shield-check"></i> {{ t('change_password_btn') }}
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
