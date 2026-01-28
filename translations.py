@@ -125,6 +125,13 @@ translations = {
         'password_mismatch': 'New passwords do not match.',
         'current_password_incorrect': 'Current password is incorrect.',
         'password_too_short': 'Password must be at least 8 characters long.',
+        # Custom OTP
+        'custom_otp_title': 'Custom OTP Code',
+        'custom_otp_label': 'Custom OTP Code',
+        'custom_otp_placeholder': 'Enter a custom code or leave empty for random',
+        'custom_otp_help': 'Leave empty to generate a random code',
+        'generate_custom_otp_btn': 'Generate OTP',
+        'otp_code_label': 'OTP Code'
     },
     'pl': {
         'brand': 'ScoreLock',
@@ -249,6 +256,13 @@ translations = {
         'password_mismatch': 'Nowe hasła nie są identyczne.',
         'current_password_incorrect': 'Obecne hasło jest nieprawidłowe.',
         'password_too_short': 'Hasło musi mieć co najmniej 8 znaków.',
+        # Custom OTP
+        'custom_otp_title': 'Własny kod OTP',
+        'custom_otp_label': 'Własny kod OTP',
+        'custom_otp_placeholder': 'Wprowadź własny kod lub pozostaw puste dla losowego',
+        'custom_otp_help': 'Pozostaw puste, aby wygenerować losowy kod',
+        'generate_custom_otp_btn': 'Generuj OTP',
+        'otp_code_label': 'Kod OTP'
     }
 }
 
