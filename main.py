@@ -907,5 +907,12 @@ def clear_site_settings():
 
     return redirect(url_for('admin_dashboard'))
 
+
+@app.route('/policy/<int:policy_id>')
+def view_policy(policy_id):
+    """View full policy text"""
+    policy = Policy.query.get_or_404(policy_id)
+    return render_template('policy_view.html', policy=policy)
+
 if __name__ == '__main__':
     app.run(debug=True)
