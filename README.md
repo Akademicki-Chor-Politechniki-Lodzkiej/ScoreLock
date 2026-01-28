@@ -19,8 +19,8 @@ A secure Flask-based web application for managing and sharing sheet music PDFs w
 ## Prerequisites
 
 - Python 3.8 or higher
-- MySQL or MariaDB database server
 - Modern web browser
+- (Optional) MySQL or MariaDB database server for production deployments
 
 ## Installation
 
@@ -37,7 +37,15 @@ cd ScoreLock
 pip install -r requirements.txt
 ```
 
-### 3. Create MySQL Database
+### 3. Database Setup
+
+ScoreLock supports two database options:
+
+#### Option A: SQLite (Default - Recommended for Development)
+
+**No setup required!** SQLite is built into Python and requires no separate database server. The database file will be automatically created when you initialize the application.
+
+#### Option B: MySQL/MariaDB (Recommended for Production)
 
 Open MySQL/MariaDB command line or phpMyAdmin and create a database:
 
@@ -55,6 +63,18 @@ FLUSH PRIVILEGES;
 
 ### 4. Configure Environment Variables
 
+**Quick Setup (SQLite):**
+```bash
+# Windows
+setup_sqlite.bat
+
+# Linux/Mac
+chmod +x setup_sqlite.sh
+./setup_sqlite.sh
+```
+
+**Manual Setup:**
+
 Copy the example environment file and edit it:
 
 ```bash
@@ -63,6 +83,14 @@ copy .env.example .env
 
 Edit `.env` file with your settings:
 
+**For SQLite (default):**
+```env
+SECRET_KEY=your-very-secret-key-here-change-this-to-random-string
+# DATABASE_URL=sqlite:///scorelock.db  (optional, this is the default)
+UPLOAD_FOLDER=scores
+```
+
+**For MySQL:**
 ```env
 SECRET_KEY=your-very-secret-key-here-change-this-to-random-string
 DATABASE_URL=mysql+pymysql://username:password@localhost/scorelock
@@ -74,6 +102,8 @@ UPLOAD_FOLDER=scores
 ```python
 python -c "import secrets; print(secrets.token_hex(32))"
 ```
+
+**📖 For detailed database configuration options, switching between SQLite and MySQL, and troubleshooting, see [DATABASE_CONFIG.md](DATABASE_CONFIG.md)**
 
 ### 5. Initialize the Database
 
@@ -167,6 +197,12 @@ Use nginx or Apache as a reverse proxy and enable HTTPS with Let's Encrypt.
 ## Troubleshooting
 
 ### Database Connection Error
+
+**SQLite:**
+- Check if the database file path is writable
+- Ensure the application directory has write permissions
+
+**MySQL:**
 - Verify MySQL/MariaDB is running
 - Check credentials in `.env` file
 - Ensure database exists
@@ -178,6 +214,35 @@ Use nginx or Apache as a reverse proxy and enable HTTPS with Let's Encrypt.
 ### File Upload Issues
 - Check `scores/` folder exists and is writable
 - Verify file size limits in `main.py`
+
+## Database Comparison
+
+### SQLite
+**Pros:**
+- ✅ No separate database server required
+- ✅ Zero configuration
+- ✅ Perfect for development and small deployments
+- ✅ Single file database (easy to backup)
+- ✅ Cross-platform compatible
+
+**Cons:**
+- ⚠️ Not ideal for high concurrent writes
+- ⚠️ Limited scalability for large deployments
+
+**Best for:** Development, testing, small to medium deployments (< 100 concurrent users)
+
+### MySQL/MariaDB
+**Pros:**
+- ✅ Better performance with high concurrent users
+- ✅ Advanced features and optimizations
+- ✅ Industry-standard for production
+- ✅ Better for large-scale deployments
+
+**Cons:**
+- ⚠️ Requires separate database server
+- ⚠️ More complex setup and maintenance
+
+**Best for:** Production environments with many concurrent users
 
 ## File Structure
 
