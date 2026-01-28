@@ -86,6 +86,13 @@ if errorlevel 1 goto :init_db
 echo.
 echo Initializing database...
 python init_db.py
+if errorlevel 1 (
+    echo.
+    echo Error: Failed to initialize the database.
+    echo Please check the error messages above, fix the issue, and run 'python init_db.py' again.
+    pause
+    exit /b 1
+)
 echo.
 goto :finish
 
