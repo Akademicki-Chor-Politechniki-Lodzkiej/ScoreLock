@@ -103,3 +103,17 @@ class PolicyAcceptance(db.Model):
     otp = db.relationship('OTP', backref='policy_acceptances')
     policy = db.relationship('Policy', backref='acceptances')
 
+    @staticmethod
+    def check_session_policies_accepted(session_id):
+        """Check if current session has accepted all active policies"""
+        active_policies = Policy.get_active_policies()
+        if not active_policies:
+            return True  # No policies to accept
+
+        active_policy_ids = {p.id for p in active_policies}
+        accepted_policy_ids = {
+            pa.policy_id for pa in PolicyAcceptance.query.filter_by(session_id=session_id).all()
+        }
+
+        return active_policy_ids.issubset(accepted_policy_ids)
+
