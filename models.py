@@ -85,3 +85,8 @@ class Policy(db.Model):
 
     admin = db.relationship('Admin', backref='created_policies')
 
+    @staticmethod
+    def get_active_policies():
+        """Get all active policies"""
+        return Policy.query.filter_by(is_active=True).order_by(Policy.created_at.asc()).all()
+
