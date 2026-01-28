@@ -25,8 +25,9 @@ echo.
 
 :create_env
 echo Creating .env file with SQLite configuration...
+for /f "usebackq delims=" %%K in (`python -c "import secrets; print(secrets.token_hex(32))"`) do set "SECRET_KEY=%%K"
 (
-    echo SECRET_KEY=%RANDOM%%RANDOM%%RANDOM%%RANDOM%
+    echo SECRET_KEY=%SECRET_KEY%
     echo DATABASE_URL=sqlite:///scorelock.db
     echo UPLOAD_FOLDER=scores
 ) > .env
@@ -85,6 +86,13 @@ if errorlevel 1 goto :init_db
 echo.
 echo Initializing database...
 python init_db.py
+if errorlevel 1 (
+    echo.
+    echo Error: Failed to initialize the database.
+    echo Please check the error messages above, fix the issue, and run 'python init_db.py' again.
+    pause
+    exit /b 1
+)
 echo.
 goto :finish
 

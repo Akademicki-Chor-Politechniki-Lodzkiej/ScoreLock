@@ -28,12 +28,19 @@ def test_database_config():
                 db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), db_path)
             print(f"  - Database file path: {db_path}")
 
-            # Check if directory is writable
+            # Check if directory is writable or can be created
             db_dir = os.path.dirname(db_path)
-            if os.path.exists(db_dir) and os.access(db_dir, os.W_OK):
-                print("  ✓ Directory is writable")
+            if os.path.exists(db_dir):
+                if os.access(db_dir, os.W_OK):
+                    print("  ✓ Directory is writable")
+                else:
+                    print("  ⚠ Warning: Directory is not writable")
             else:
-                print("  ⚠ Warning: Directory may not be writable")
+                parent_dir = os.path.dirname(db_dir) or os.getcwd()
+                if os.access(parent_dir, os.W_OK):
+                    print("  ✓ Directory does not exist but can be created (parent is writable)")
+                else:
+                    print("  ⚠ Warning: Directory may not be creatable (parent is not writable)")
 
     elif 'mysql' in db_url or 'mariadb' in db_url:
         print("\n✓ Using MySQL/MariaDB database")
