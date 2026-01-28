@@ -982,6 +982,13 @@ def policy_acceptance():
 def view_policy(policy_id):
     """View full policy text"""
     policy = Policy.query.get_or_404(policy_id)
+
+    # Only allow viewing active policies, unless user is an admin
+    if not policy.is_active and not current_user.is_authenticated:
+        # Return 404 to avoid revealing existence of inactive policies
+        flash('Policy not found or no longer available.', 'warning')
+        return redirect(url_for('index')), 404
+
     return render_template('policy_view.html', policy=policy)
 
 @app.route('/admin/policies', methods=['GET', 'POST'])
