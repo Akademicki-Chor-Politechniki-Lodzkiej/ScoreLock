@@ -914,5 +914,55 @@ def view_policy(policy_id):
     policy = Policy.query.get_or_404(policy_id)
     return render_template('policy_view.html', policy=policy)
 
+@app.route('/admin/policies', methods=['GET', 'POST'])
+@login_required
+def manage_policies():
+    if request.method == 'POST':
+        action = request.form.get('action')
+
+        if action == 'create':
+            name = request.form.get('name', '').strip()
+            short_notice = request.form.get('short_notice', '').strip()
+            full_policy = request.form.get('full_policy', '').strip()
+
+            # Validation
+            if not name:
+                flash('Policy name is required.', 'danger')
+                return redirect(url_for('manage_policies'))
+
+            if len(name) > 200:
+                flash('Policy name is too long (max 200 characters).', 'danger')
+                return redirect(url_for('manage_policies'))
+
+            if not short_notice:
+                flash('Short notice is required.', 'danger')
+                return redirect(url_for('manage_policies'))
+
+            if not full_policy:
+                flash('Full policy text is required.', 'danger')
+                return redirect(url_for('manage_policies'))
+
+            # Create policy
+            policy = Policy(
+                name=name,
+                short_notice=short_notice,
+                full_policy=full_policy,
+                created_by=current_user.id
+            )
+
+            try:
+                db.session.add(policy)
+                db.session.commit()
+                flash(f'Policy "{name}" created successfully!', 'success')
+            except Exception as e:
+                db.session.rollback()
+                app.logger.exception('Failed to create policy: %s', e)
+                flash('Failed to create policy.', 'danger')
+
+            return redirect(url_for('manage_policies'))
+
+    policies = Policy.query.order_by(Policy.created_at.desc()).all()
+    return render_template('manage_policies.html', policies=policies)
+
 if __name__ == '__main__':
     app.run(debug=True)
