@@ -907,6 +907,57 @@ def clear_site_settings():
 
     return redirect(url_for('admin_dashboard'))
 
+@app.route('/policy-acceptance', methods=['GET', 'POST'])
+def policy_acceptance():
+    # Must be an OTP authenticated user
+    if not session.get('otp_authenticated'):
+        flash('Please login with OTP to continue.', 'warning')
+        return redirect(url_for('login'))
+
+    otp_id = session.get('otp_id')
+    session_id = session.get('policy_session_id')
+
+    if not otp_id or not session_id:
+        flash('Session error. Please login again.', 'danger')
+        return redirect(url_for('logout'))
+
+    pending_policies = PolicyAcceptance.get_pending_policies_for_session(session_id)
+
+    if not pending_policies:
+        # All policies accepted, redirect to library
+        return redirect(url_for('library'))
+
+    if request.method == 'POST':
+        action = request.form.get('action')
+
+        if action == 'accept':
+            # Record acceptance for all pending policies
+            ip_address = request.remote_addr
+
+            for policy in pending_policies:
+                acceptance = PolicyAcceptance(
+                    session_id=session_id,
+                    otp_id=otp_id,
+                    policy_id=policy.id,
+                    ip_address=ip_address
+                )
+                db.session.add(acceptance)
+
+            try:
+                db.session.commit()
+                flash('Thank you for accepting the policies. You may now access the library.', 'success')
+                return redirect(url_for('library'))
+            except Exception as e:
+                db.session.rollback()
+                app.logger.exception('Failed to record policy acceptance: %s', e)
+                flash('Failed to record policy acceptance. Please try again.', 'danger')
+
+        elif action == 'decline':
+            # User declined - log them out
+            flash('You must accept all policies to access the library. You have been logged out.', 'warning')
+            return redirect(url_for('logout'))
+
+    return render_template('policy_acceptance.html', policies=pending_policies)
 
 @app.route('/policy/<int:policy_id>')
 def view_policy(policy_id):
