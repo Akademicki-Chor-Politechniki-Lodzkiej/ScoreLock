@@ -117,6 +117,117 @@ def is_authorized():
     except Exception:
         return False
 
+# File upload helper functions
+
+def validate_and_process_upload(file_obj, allowed_extensions, max_size_bytes, file_type_name, filename_prefix):
+    """
+    Validate and process an uploaded file.
+
+    Args:
+        file_obj: FileStorage object from request.files
+        allowed_extensions: Set of allowed file extensions (e.g., {'.png', '.jpg'})
+        max_size_bytes: Maximum allowed file size in bytes
+        file_type_name: Display name for error messages (e.g., 'Logo', 'Favicon')
+        filename_prefix: Prefix for the saved filename (e.g., 'logo_', 'favicon_')
+
+    Returns:
+        Tuple of (success: bool, filename: str or None, error_message: str or None)
+    """
+    if not file_obj or file_obj.filename == '':
+        return False, None, None
+
+    # Validate file type
+    file_ext = os.path.splitext(file_obj.filename.lower())[1]
+    if file_ext not in allowed_extensions:
+        ext_list = ', '.join(sorted(allowed_extensions)).upper()
+        return False, None, f'{file_type_name} must be one of: {ext_list}'
+
+    # Read and validate file size
+    data = file_obj.read()
+    if len(data) > max_size_bytes:
+        size_mb = max_size_bytes / (1024 * 1024)
+        return False, None, f'{file_type_name} file is too large (max {size_mb:.0f}MB)'
+
+    # Generate secure filename
+    filename = secure_filename(file_obj.filename)
+    if not filename:
+        filename = f"{uuid4().hex}{file_ext}"
+
+    filename = filename.replace(os.path.sep, '_').replace('/', '_').lstrip('.')
+    timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S_')
+    filename = f"{filename_prefix}{timestamp}{filename}"
+
+    return True, filename, data
+
+def save_uploaded_file(filename, data, old_filename=None):
+    """
+    Save an uploaded file to the static folder with path validation.
+
+    Args:
+        filename: The secure filename to save as
+        data: Binary file data
+        old_filename: Optional old filename to delete
+
+    Returns:
+        Tuple of (success: bool, error_message: str or None)
+    """
+    static_folder = os.path.join(app.root_path, 'static')
+    filepath = os.path.join(static_folder, filename)
+
+    # Validate path to prevent traversal attacks
+    static_folder_abs = os.path.abspath(static_folder)
+    filepath_abs = os.path.abspath(filepath)
+
+    try:
+        if os.path.commonpath([static_folder_abs, filepath_abs]) != static_folder_abs:
+            app.logger.error('Detected attempted path traversal in file upload: %s', filepath_abs)
+            return False, 'Invalid upload path'
+    except Exception as e:
+        app.logger.exception('Error validating upload path: %s', e)
+        return False, 'Invalid upload path'
+
+    # Delete old file if it exists
+    if old_filename:
+        old_filepath = os.path.join(static_folder, old_filename)
+        try:
+            if os.path.exists(old_filepath):
+                os.remove(old_filepath)
+        except Exception as e:
+            app.logger.exception('Failed to remove old file %s: %s', old_filename, e)
+
+    # Save new file
+    try:
+        with open(filepath, 'wb') as f:
+            f.write(data)
+        return True, None
+    except Exception as e:
+        app.logger.exception('Failed to save file %s: %s', filename, e)
+        return False, f'Failed to save {filename}'
+
+def delete_static_file(filename):
+    """
+    Delete a file from the static folder.
+
+    Args:
+        filename: The filename to delete
+
+    Returns:
+        bool: True if successful or file didn't exist, False on error
+    """
+    if not filename:
+        return True
+
+    static_folder = os.path.join(app.root_path, 'static')
+    filepath = os.path.join(static_folder, filename)
+
+    try:
+        if os.path.exists(filepath):
+            os.remove(filepath)
+        return True
+    except Exception as e:
+        app.logger.exception('Failed to delete file %s: %s', filename, e)
+        return False
+
 # Routes
 @app.route('/')
 def index():
