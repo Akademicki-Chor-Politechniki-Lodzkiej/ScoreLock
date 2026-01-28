@@ -92,6 +92,9 @@ class Policy(db.Model):
 
 class PolicyAcceptance(db.Model):
     __tablename__ = 'policy_acceptances'
+    __table_args__ = (
+        db.UniqueConstraint('session_id', 'policy_id', name='uq_session_policy'),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     session_id = db.Column(db.String(255), nullable=False)  # Flask session ID
