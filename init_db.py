@@ -1,5 +1,5 @@
 from main import app
-from models import db, Admin
+from models import db, Admin, SiteSettings, Policy
 import sys, getpass
 
 def init_db():
@@ -8,6 +8,16 @@ def init_db():
         # Create all tables
         db.create_all()
         print("✓ Database tables created successfully!")
+
+        # Initialize Site Settings
+        settings = SiteSettings.query.first()
+        if not settings:
+            settings = SiteSettings(site_name='ScoreLock')
+            db.session.add(settings)
+            db.session.commit()
+            print("✓ Site settings initialized with default values")
+        else:
+            print(f"✓ Site settings already exist (Site name: {settings.site_name})")
 
         # Check if admin exists
         admin_count = Admin.query.count()
