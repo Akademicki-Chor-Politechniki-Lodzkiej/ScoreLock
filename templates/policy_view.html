@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}{{ policy.name }} - {{ site_settings.site_name if site_settings else t('brand') }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-file-text"></i> {{ policy.name }}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="policy-content" style="white-space: pre-wrap;">{{ policy.full_policy }}</div>
+
+                    <hr class="my-4">
+
+                    <div class="text-muted small">
+                        <i class="bi bi-calendar"></i>
+                        {{ t('policy_created_label') }}: {{ policy.created_at.strftime('%Y-%m-%d %H:%M') }}
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button onclick="window.close()" class="btn btn-secondary">
+                        <i class="bi bi-x"></i> {{ t('close_btn') }}
+                    </button>
+                    <a href="javascript:history.back()" class="btn btn-primary">
+                        <i class="bi bi-arrow-left"></i> {{ t('back_btn') }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
