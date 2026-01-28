@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('manage_policies_title') }} - {{ site_settings.site_name if site_settings else t('brand') }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-4">
+                <i class="bi bi-shield-check"></i> {{ t('manage_policies_title') }}
+            </h1>
+            <p class="lead text-muted">{{ t('manage_policies_subtitle') }}</p>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> {{ t('back_to_admin') }}
+            </a>
+        </div>
+    </div>
+
+    <!-- Create New Policy -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-plus-circle"></i> {{ t('create_policy_title') }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('manage_policies') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="create">
+
+                        <div class="mb-3">
+                            <label for="name" class="form-label">{{ t('policy_name_label') }}</label>
+                            <input type="text" class="form-control" id="name" name="name" required
+                                   placeholder="{{ t('policy_name_placeholder') }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="short_notice" class="form-label">{{ t('policy_short_notice_label') }}</label>
+                            <textarea class="form-control" id="short_notice" name="short_notice" rows="3" required
+                                      placeholder="{{ t('policy_short_notice_placeholder') }}"></textarea>
+                            <div class="form-text">{{ t('policy_short_notice_help') }}</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="full_policy" class="form-label">{{ t('policy_full_text_label') }}</label>
+                            <textarea class="form-control" id="full_policy" name="full_policy" rows="10" required
+                                      placeholder="{{ t('policy_full_text_placeholder') }}"></textarea>
+                            <div class="form-text">{{ t('policy_full_text_help') }}</div>
+                        </div>
+
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> {{ t('create_policy_btn') }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Existing Policies -->
+    <div class="row">
+        <div class="col">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list"></i> {{ t('existing_policies_title') }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if policies %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>{{ t('policy_name_label') }}</th>
+                                    <th>{{ t('status_label') }}</th>
+                                    <th>{{ t('created_label') }}</th>
+                                    <th>{{ t('actions_label') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for policy in policies %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ policy.name }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ policy.short_notice[:100] }}{% if policy.short_notice|length > 100 %}...{% endif %}</small>
+                                    </td>
+                                    <td>
+                                        {% if policy.is_active %}
+                                        <span class="badge bg-success">{{ t('active_label') }}</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">{{ t('inactive_label') }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ policy.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{{ url_for('view_policy', policy_id=policy.id) }}"
+                                               class="btn btn-info" target="_blank"
+                                               title="{{ t('view_btn') }}">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <form method="POST" action="{{ url_for('toggle_policy', policy_id=policy.id) }}" class="d-inline">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn-warning"
+                                                        title="{% if policy.is_active %}{{ t('deactivate_btn') }}{% else %}{{ t('activate_btn') }}{% endif %}">
+                                                    <i class="bi bi-toggle-{% if policy.is_active %}on{% else %}off{% endif %}"></i>
+                                                </button>
+                                            </form>
+                                            <form method="POST" action="{{ url_for('delete_policy', policy_id=policy.id) }}"
+                                                  class="d-inline"
+                                                  onsubmit="return confirm('{{ t('confirm_delete_policy') }}');">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn-danger"
+                                                        title="{{ t('delete_btn') }}">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">{{ t('no_policies') }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
