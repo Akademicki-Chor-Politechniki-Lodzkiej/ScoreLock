@@ -467,9 +467,9 @@ def deactivate_otp(otp_id):
 @app.route('/admin/change-password', methods=['POST'])
 @login_required
 def change_password():
-    current_password = request.form.get('current_password', '').strip()
-    new_password = request.form.get('new_password', '').strip()
-    confirm_password = request.form.get('confirm_password', '').strip()
+    current_password = request.form.get('current_password', '')
+    new_password = request.form.get('new_password', '')
+    confirm_password = request.form.get('confirm_password', '')
 
     # Validate inputs
     if not current_password or not new_password or not confirm_password:
